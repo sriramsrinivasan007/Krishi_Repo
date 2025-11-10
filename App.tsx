@@ -7,6 +7,7 @@ import { FarmerIcon, ChatBubbleIcon } from './components/IconComponents';
 import LanguageSelector from './components/LanguageSelector';
 import { useTranslation } from './hooks/useTranslation';
 import ThemeToggle from './components/ThemeToggle';
+import { generateCropAdvisory } from './services/geminiService';
 
 // Lazy-load large components
 const AdvisoryDisplay = lazy(() => import('./components/AdvisoryDisplay'));
@@ -31,7 +32,6 @@ const App: React.FC = () => {
     setError(null);
     setAdvisoryResult(null);
     try {
-      const { generateCropAdvisory } = await import('./services/geminiService');
       const result = await generateCropAdvisory(userInput, locale, enableThinking, coordinates);
       setAdvisoryResult(result);
     } catch (err) {
