@@ -21,6 +21,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>('advisory');
+  const [lastInput, setLastInput] = useState<{userInput: UserInput, coordinates: Coordinates | null} | null>(null);
   const { t, locale } = useTranslation();
 
   const handleLoginSuccess = (user: User) => {
@@ -31,6 +32,7 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setAdvisoryResult(null);
+    setLastInput({ userInput, coordinates });
     try {
       const result = await generateCropAdvisory(userInput, locale, enableThinking, coordinates);
       setAdvisoryResult(result);
@@ -45,12 +47,14 @@ const App: React.FC = () => {
   const handleReset = () => {
     setAdvisoryResult(null);
     setError(null);
+    setLastInput(null);
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     setAdvisoryResult(null);
     setError(null);
+    setLastInput(null);
     setView('advisory');
   };
 
@@ -131,8 +135,13 @@ const App: React.FC = () => {
                   </div>
                 )}
 
-                {advisoryResult && !isLoading && (
-                  <AdvisoryDisplay advisory={advisoryResult.advisory} sources={advisoryResult.sources} onReset={handleReset} />
+                {advisoryResult && lastInput && !isLoading && (
+                  <AdvisoryDisplay 
+                    advisory={advisoryResult.advisory} 
+                    sources={advisoryResult.sources} 
+                    onReset={handleReset}
+                    userInput={lastInput.userInput}
+                  />
                 )}
               </>
             )}

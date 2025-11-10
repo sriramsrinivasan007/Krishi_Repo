@@ -19,6 +19,7 @@ export interface UserInput {
   soilType: string;
   irrigation: string;
   previousCrop?: string;
+  interestedCrops?: string;
 }
 
 export type Locale = 'en' | 'hi' | 'kn' | 'te' | 'ta' | 'ml';
@@ -52,6 +53,18 @@ export interface FertilizerRecommendation {
     application_notes: string;
 }
 
+export interface SoilHealthRecommendation {
+    practice: string;
+    how_to: string[];
+    benefit: string;
+}
+
+export interface SoilHealthAnalysis {
+    assessment: string;
+    recommendations_for_improvement: SoilHealthRecommendation[];
+    organic_farming_link: string;
+}
+
 export interface CropAdvisory {
   suggested_crop_for_cultivation: string;
   why: {
@@ -59,6 +72,7 @@ export interface CropAdvisory {
     crop_rotation: string;
     market_demand: string;
   };
+  soil_health_analysis: SoilHealthAnalysis;
   time_to_complete_harvest: {
     duration_days_range: string;
     season_window: string;
@@ -123,4 +137,24 @@ export interface CropAdvisory {
 export interface AdvisoryResult {
   advisory: CropAdvisory;
   sources: GroundingChunk[];
+}
+
+// Weather Feature Types
+export interface CurrentWeather {
+  temperature: number;
+  condition: string;
+  icon: 'Sunny' | 'PartlyCloudy' | 'Cloudy' | 'Rain' | 'Thunderstorm' | 'Snow' | 'Windy';
+}
+
+export interface DailyForecast {
+  day: string;
+  high_temp: number;
+  low_temp: number;
+  condition: string;
+  icon: 'Sunny' | 'PartlyCloudy' | 'Cloudy' | 'Rain' | 'Thunderstorm' | 'Snow' | 'Windy';
+}
+
+export interface WeatherForecast {
+  current: CurrentWeather;
+  daily: DailyForecast[];
 }

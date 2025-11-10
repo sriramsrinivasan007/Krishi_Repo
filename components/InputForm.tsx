@@ -19,6 +19,7 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
     soilType: 'Alluvial',
     irrigation: 'Drip Irrigation',
     previousCrop: 'Cotton',
+    interestedCrops: '',
   });
   const [enableThinking, setEnableThinking] = useState(false);
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
@@ -275,6 +276,36 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
               </button>
             </div>
             {recordingField === 'previousCrop' && (
+              <p className="text-sm text-brand-primary dark:text-green-400 mt-1">
+                {interimTranscript || t('voice_listening')}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="interestedCrops" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
+              {t('form_interested_crops')}
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                name="interestedCrops"
+                id="interestedCrops"
+                value={formData.interestedCrops}
+                onChange={handleChange}
+                className="w-full px-4 py-2 pr-10 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary-light dark:focus:ring-green-500 focus:border-transparent transition duration-300"
+                placeholder={t('form_interested_crops_placeholder')}
+              />
+              <button
+                  type="button"
+                  onClick={() => handleToggleVoiceInput('interestedCrops')}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-brand-primary transition-colors"
+                  aria-label={t('voice_start_prompt_interested_crops')}
+              >
+                  <MicrophoneIcon className={`w-5 h-5 ${recordingField === 'interestedCrops' ? 'text-red-500 animate-pulse' : ''}`} />
+              </button>
+            </div>
+            {recordingField === 'interestedCrops' && (
               <p className="text-sm text-brand-primary dark:text-green-400 mt-1">
                 {interimTranscript || t('voice_listening')}
               </p>

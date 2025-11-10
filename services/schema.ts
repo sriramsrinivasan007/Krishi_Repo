@@ -1,5 +1,3 @@
-
-
 export const cropAdvisorySchema = {
   "name": "crop_advisory_schema",
   "description": "Structured crop cultivation recommendation including costs, irrigation, profitability, and case studies.",
@@ -13,6 +11,29 @@ export const cropAdvisorySchema = {
           "soil_suitability": { "type": "string" },
           "crop_rotation": { "type": "string" },
           "market_demand": { "type": "string" }
+        }
+      },
+      "soil_health_analysis": {
+        "type": "object",
+        "properties": {
+          "assessment": { "type": "string", "description": "A brief analysis of the user-provided soil type, its characteristics, and common challenges." },
+          "recommendations_for_improvement": {
+            "type": "array",
+            "description": "A list of actionable recommendations to improve soil fertility and structure.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "practice": { "type": "string", "description": "The name of the recommended practice, e.g., 'Cover Cropping'." },
+                "benefit": { "type": "string", "description": "A short, concise summary of the primary benefit of this practice for the given soil type." },
+                "how_to": { 
+                  "type": "array", 
+                  "description": "A list of concise, step-by-step instructions on how to implement the practice.",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          },
+          "organic_farming_link": { "type": "string", "description": "A paragraph explaining how the recommended practices align with principles of organic and sustainable farming." }
         }
       },
       "time_to_complete_harvest": {
@@ -142,6 +163,7 @@ export const cropAdvisorySchema = {
     "required": [
       "suggested_crop_for_cultivation",
       "why",
+      "soil_health_analysis",
       "time_to_complete_harvest",
       "estimated_total_expense_for_user_land",
       "irrigation_schedule",
@@ -152,5 +174,46 @@ export const cropAdvisorySchema = {
       "warnings_and_constraints",
       "data_gaps_and_assumptions"
     ]
+  }
+};
+
+export const weatherForecastSchema = {
+  "name": "weather_forecast_schema",
+  "description": "Provides the current weather and a 5-day forecast for a specific location.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "current": {
+        "type": "object",
+        "properties": {
+          "temperature": { "type": "number", "description": "Current temperature in Celsius." },
+          "condition": { "type": "string", "description": "A brief text description of the weather condition." },
+          "icon": { 
+            "type": "string", 
+            "enum": ["Sunny", "PartlyCloudy", "Cloudy", "Rain", "Thunderstorm", "Snow", "Windy"],
+            "description": "A machine-readable icon name."
+          }
+        }
+      },
+      "daily": {
+        "type": "array",
+        "description": "A 5-day forecast.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "day": { "type": "string", "description": "The day of the week (e.g., 'Monday')." },
+            "high_temp": { "type": "number", "description": "The high temperature for the day in Celsius." },
+            "low_temp": { "type": "number", "description": "The low temperature for the day in Celsius." },
+            "condition": { "type": "string", "description": "A brief text description of the weather condition for the day." },
+             "icon": { 
+              "type": "string", 
+              "enum": ["Sunny", "PartlyCloudy", "Cloudy", "Rain", "Thunderstorm", "Snow", "Windy"],
+              "description": "A machine-readable icon name."
+            }
+          }
+        }
+      }
+    },
+    "required": ["current", "daily"]
   }
 };

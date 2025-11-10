@@ -1,17 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import type { CropAdvisory, GroundingChunk } from '../types';
+import type { CropAdvisory, GroundingChunk, WeatherForecast, UserInput } from '../types';
 import { InfoCard, SectionCard, ListCard } from './CardComponents';
-import { CalendarIcon, DropletIcon, CheckCircleIcon, WarningIcon, MarketIcon, BookIcon, DollarSignIcon, SpeakerWaveIcon, GlobeIcon, BugIcon, NutrientIcon } from './IconComponents';
+import { CalendarIcon, DropletIcon, CheckCircleIcon, WarningIcon, MarketIcon, BookIcon, DollarSignIcon, SpeakerWaveIcon, GlobeIcon, BugIcon, NutrientIcon, ThermometerIcon, SoilIcon } from './IconComponents';
 import { useTranslation } from '../hooks/useTranslation';
-import { generateSpeech } from '../services/geminiService';
+import { generateSpeech, getWeatherForecast } from '../services/geminiService';
 import { decode, decodeAudioData } from '../utils/audioUtils';
 import { useTheme } from '../context/ThemeContext';
+import LoadingSpinner from './LoadingSpinner';
+
+const WeatherDisplay = lazy(() => import('./WeatherDisplay'));
 
 interface AdvisoryDisplayProps {
   advisory: CropAdvisory;
   sources: GroundingChunk[];
   onReset: () => void;
+  userInput: UserInput;
 }
 
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
@@ -109,16 +113,24 @@ const HarvestTimeline: React.FC<{ duration: string }> = ({ duration }) => {
 };
 
 
-const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, onReset }) => {
+const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, onReset, userInput }) => {
   const { t, locale } = useTranslation();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
   const [audioData, setAudioData] = useState<string | null>(null);
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(true);
+  
+  const { location } = userInput;
+
+  // Weather state
+  const [weather, setWeather] = useState<WeatherForecast | null>(null);
+  const [isWeatherLoading, setIsWeatherLoading] = useState(true);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
 
   const {
     suggested_crop_for_cultivation,
     why,
+    soil_health_analysis,
     time_to_complete_harvest,
     estimated_total_expense_for_user_land,
     irrigation_schedule,
@@ -164,8 +176,23 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
         }
     };
 
+    const fetchWeather = async () => {
+        setIsWeatherLoading(true);
+        setWeatherError(null);
+        try {
+            const forecast = await getWeatherForecast(location, locale);
+            setWeather(forecast);
+        } catch (err) {
+             console.error("Failed to fetch weather:", err);
+            setWeatherError(err instanceof Error ? err.message : 'Could not load weather data.');
+        } finally {
+            setIsWeatherLoading(false);
+        }
+    }
+
     fetchAudio();
-  }, [advisory, locale, t]);
+    fetchWeather();
+  }, [advisory, locale, t, location]);
 
 
   const handleSpeak = async () => {
@@ -249,6 +276,49 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
           <InfoCard title={t('advisory_why_market')} value={why.market_demand} />
         </div>
       </SectionCard>
+
+      {soil_health_analysis && (
+          <SectionCard title={t('advisory_soil_health_title')} icon={<SoilIcon />}>
+              <p className="text-brand-text-secondary dark:text-gray-300 mb-6">{soil_health_analysis.assessment}</p>
+              <div className="space-y-6">
+                  {soil_health_analysis.recommendations_for_improvement.map((rec, index) => (
+                      <div key={index} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border dark:border-gray-600">
+                          <h4 className="font-bold text-lg text-brand-primary dark:text-green-300 mb-4">{rec.practice}</h4>
+                          <div className="space-y-4">
+                              <div>
+                                  <h5 className="font-semibold text-brand-text-primary dark:text-gray-200 mb-2">{t('soil_benefit')}</h5>
+                                  <div className="p-3 bg-green-100 dark:bg-green-900/60 rounded-lg">
+                                      <p className="text-sm text-green-800 dark:text-green-200">{rec.benefit}</p>
+                                  </div>
+                              </div>
+                              <div>
+                                  <h5 className="font-semibold text-brand-text-primary dark:text-gray-200 mb-2">{t('soil_how_to')}</h5>
+                                  <ol className="list-decimal list-inside space-y-2 text-sm text-brand-text-secondary dark:text-gray-300 bg-gray-100 dark:bg-gray-800 p-3 rounded-lg">
+                                      {rec.how_to.map((step, i) => <li key={i} className="pl-2">{step}</li>)}
+                                  </ol>
+                              </div>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+               <div className="mt-6">
+                  <h4 className="font-semibold text-brand-text-primary dark:text-gray-200 mb-1">{t('soil_organic_link')}</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{soil_health_analysis.organic_farming_link}</p>
+              </div>
+          </SectionCard>
+      )}
+
+      <Suspense fallback={
+          <SectionCard title={t('weather_title')} icon={<ThermometerIcon />}>
+              <div className="flex justify-center items-center h-48"><LoadingSpinner /></div>
+          </SectionCard>
+      }>
+          <SectionCard title={t('weather_title')} icon={<ThermometerIcon />}>
+              {isWeatherLoading && <div className="flex justify-center items-center h-48"><LoadingSpinner /></div>}
+              {weatherError && <p className="text-center text-red-500">{weatherError}</p>}
+              {weather && !isWeatherLoading && <WeatherDisplay location={location} forecast={weather} />}
+          </SectionCard>
+      </Suspense>
       
       <SectionCard title={t('advisory_timeline_title')} icon={<CalendarIcon />}>
           <div className="flex flex-col md:flex-row items-center gap-6">
