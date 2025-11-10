@@ -1,123 +1,366 @@
-import React, { useState } from 'react';
-import type { UserInput } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import type { UserInput, Coordinates } from '../types';
+import { useTranslation } from '../hooks/useTranslation';
+import LocationPicker, { type LocationData } from './LocationPicker';
+import { MapPinIcon, MicrophoneIcon } from './IconComponents';
+
+type VoiceField = keyof Omit<UserInput, 'location' | 'landSize'> | 'landSize';
 
 interface InputFormProps {
-  onGenerate: (data: UserInput) => void;
+  onGenerate: (data: UserInput, enableThinking: boolean, coordinates: Coordinates | null) => void;
 }
 
 const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
+  const { t, locale } = useTranslation();
   const [formData, setFormData] = useState<UserInput>({
-    landSize: '5',
-    location: 'Nashik, Maharashtra, India',
+    landSize: '5 acres',
+    location: 'Fetching location...',
     soilType: 'Alluvial',
     irrigation: 'Drip Irrigation',
+    previousCrop: 'Cotton',
   });
+  const [enableThinking, setEnableThinking] = useState(false);
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  
+  // Voice Input State
+  const [recordingField, setRecordingField] = useState<VoiceField | null>(null);
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [voiceError, setVoiceError] = useState('');
+  const recognitionRef = useRef<any>(null);
+
+  // FIX: Cast window to `any` to access non-standard browser APIs for Speech Recognition.
+  const SpeechRecognition = typeof window !== 'undefined' ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) : null;
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const newCoords = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          setCoordinates(newCoords);
+          try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${newCoords.latitude}&lon=${newCoords.longitude}`);
+            if (!response.ok) throw new Error('Failed to fetch address from Nominatim');
+            const data = await response.json();
+            setFormData(prev => ({ ...prev, location: data.display_name || 'Precise location selected' }));
+          } catch (e) {
+            console.error("Reverse geocoding failed", e);
+            setFormData(prev => ({ ...prev, location: 'Precise location selected' }));
+          }
+        },
+        (err) => {
+          console.warn(`Geolocation error: ${err.message}`);
+          setFormData(prev => ({ ...prev, location: 'Nashik, Maharashtra, India' }));
+        }
+      );
+    } else {
+      setFormData(prev => ({ ...prev, location: 'Nashik, Maharashtra, India' }));
+    }
+  }, []);
+
+  // Cleanup speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEnableThinking(e.target.checked);
+  };
+  
+  const handleToggleVoiceInput = (fieldName: VoiceField) => {
+    if (!SpeechRecognition) {
+      setVoiceError(t('voice_error_unavailable'));
+      return;
+    }
+    
+    if (recordingField === fieldName) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    
+    const recognition = new SpeechRecognition();
+    recognition.lang = locale;
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+      setRecordingField(fieldName);
+      setInterimTranscript('');
+      setVoiceError('');
+    };
+
+    recognition.onresult = (event: any) => {
+      let transcript = '';
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      
+      if (event.results[0].isFinal) {
+        setFormData(prev => ({...prev, [fieldName]: transcript.trim() }));
+        setInterimTranscript('');
+      } else {
+        setInterimTranscript(transcript);
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      if (event.error === 'no-speech') {
+        setVoiceError(t('voice_error_no_speech'));
+      } else if (event.error === 'not-allowed') {
+        setVoiceError(t('voice_error_permission'));
+      } else {
+        setVoiceError(t('voice_error_generic'));
+      }
+    };
+    
+    recognition.onend = () => {
+      setRecordingField(null);
+      recognitionRef.current = null;
+    };
+
+    recognition.start();
+    recognitionRef.current = recognition;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.landSize || !formData.location || !formData.soilType || !formData.irrigation) {
-      setError('All fields are required.');
-      return;
-    }
-    if (parseFloat(formData.landSize) <= 0) {
-      setError('Land size must be a positive number.');
+      setError(t('error_all_fields_required'));
       return;
     }
     setError(null);
-    onGenerate(formData);
+    onGenerate(formData, enableThinking, coordinates);
+  };
+
+  const handleLocationSelect = (locationData: LocationData) => {
+    setFormData(prev => ({ ...prev, location: locationData.name }));
+    setCoordinates(locationData.coords);
+    setIsMapOpen(false);
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-brand-text-primary">Plan Your Next Harvest</h2>
-        <p className="text-brand-text-secondary mt-2">Enter your farm's details to receive a personalized crop recommendation from our AI expert.</p>
+    <>
+      <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-brand-text-primary dark:text-gray-100">{t('form_title')}</h2>
+          <p className="text-brand-text-secondary dark:text-gray-400 mt-2">{t('form_subtitle')}</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="landSize" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
+              {t('form_land_size')}
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                name="landSize"
+                id="landSize"
+                value={formData.landSize}
+                onChange={handleChange}
+                className="w-full px-4 py-2 pr-10 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary-light dark:focus:ring-green-500 focus:border-transparent transition duration-300"
+                placeholder={t('form_land_size_placeholder')}
+                required
+              />
+              <button
+                  type="button"
+                  onClick={() => handleToggleVoiceInput('landSize')}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-brand-primary transition-colors"
+                  aria-label={t('voice_start_prompt_land_size')}
+              >
+                  <MicrophoneIcon className={`w-5 h-5 ${recordingField === 'landSize' ? 'text-red-500 animate-pulse' : ''}`} />
+              </button>
+            </div>
+             {recordingField === 'landSize' && (
+              <p className="text-sm text-brand-primary dark:text-green-400 mt-1">
+                {interimTranscript || t('voice_listening')}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="location" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
+              {t('form_location')}
+            </label>
+            <div className="flex items-center space-x-2">
+              <input
+                  type="text"
+                  name="location"
+                  id="location"
+                  value={formData.location}
+                  readOnly
+                  className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-900/50 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg cursor-default"
+                  placeholder={t('form_location_placeholder')}
+              />
+              <button
+                  type="button"
+                  onClick={() => setIsMapOpen(true)}
+                  className="px-4 py-2 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-primary-light transition duration-300 whitespace-nowrap flex items-center space-x-2"
+              >
+                  <MapPinIcon className="w-5 h-5" />
+                  <span>{t('form_select_on_map')}</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="soilType" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
+              {t('form_soil_type')}
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                name="soilType"
+                id="soilType"
+                value={formData.soilType}
+                onChange={handleChange}
+                className="w-full px-4 py-2 pr-10 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary-light dark:focus:ring-green-500 focus:border-transparent transition duration-300"
+                placeholder={t('form_soil_type_placeholder')}
+                required
+              />
+               <button
+                  type="button"
+                  onClick={() => handleToggleVoiceInput('soilType')}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-brand-primary transition-colors"
+                  aria-label={t('voice_start_prompt_soil_type')}
+              >
+                  <MicrophoneIcon className={`w-5 h-5 ${recordingField === 'soilType' ? 'text-red-500 animate-pulse' : ''}`} />
+              </button>
+            </div>
+            {recordingField === 'soilType' && (
+              <p className="text-sm text-brand-primary dark:text-green-400 mt-1">
+                {interimTranscript || t('voice_listening')}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="previousCrop" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
+              {t('form_previous_crop')}
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                name="previousCrop"
+                id="previousCrop"
+                value={formData.previousCrop}
+                onChange={handleChange}
+                className="w-full px-4 py-2 pr-10 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary-light dark:focus:ring-green-500 focus:border-transparent transition duration-300"
+                placeholder={t('form_previous_crop_placeholder')}
+              />
+              <button
+                  type="button"
+                  onClick={() => handleToggleVoiceInput('previousCrop')}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-brand-primary transition-colors"
+                  aria-label={t('voice_start_prompt_previous_crop')}
+              >
+                  <MicrophoneIcon className={`w-5 h-5 ${recordingField === 'previousCrop' ? 'text-red-500 animate-pulse' : ''}`} />
+              </button>
+            </div>
+            {recordingField === 'previousCrop' && (
+              <p className="text-sm text-brand-primary dark:text-green-400 mt-1">
+                {interimTranscript || t('voice_listening')}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="irrigation" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
+              {t('form_irrigation')}
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                name="irrigation"
+                id="irrigation"
+                value={formData.irrigation}
+                onChange={handleChange}
+                className="w-full px-4 py-2 pr-10 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary-light dark:focus:ring-green-500 focus:border-transparent transition duration-300"
+                placeholder={t('form_irrigation_placeholder')}
+                required
+              />
+              <button
+                  type="button"
+                  onClick={() => handleToggleVoiceInput('irrigation')}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-brand-primary transition-colors"
+                  aria-label={t('voice_start_prompt_irrigation')}
+              >
+                  <MicrophoneIcon className={`w-5 h-5 ${recordingField === 'irrigation' ? 'text-red-500 animate-pulse' : ''}`} />
+              </button>
+            </div>
+            {recordingField === 'irrigation' && (
+              <p className="text-sm text-brand-primary dark:text-green-400 mt-1">
+                {interimTranscript || t('voice_listening')}
+              </p>
+            )}
+          </div>
+          
+          {voiceError && <p className="text-sm text-red-600 dark:text-red-400">{voiceError}</p>}
+
+          <label htmlFor="enableThinking" className="flex items-center space-x-3 bg-green-50 dark:bg-green-900/50 p-3 rounded-lg cursor-pointer">
+              <div className="relative flex items-center justify-center w-5 h-5">
+                  <input
+                      type="checkbox"
+                      id="enableThinking"
+                      name="enableThinking"
+                      checked={enableThinking}
+                      onChange={handleCheckboxChange}
+                      className="appearance-none h-5 w-5 rounded border-2 border-gray-400 dark:border-gray-500 checked:bg-brand-primary checked:border-brand-primary focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 focus:ring-brand-primary-light transition-colors"
+                  />
+                  <svg 
+                      className={`absolute w-3.5 h-3.5 text-white pointer-events-none transition-opacity ${enableThinking ? 'opacity-100' : 'opacity-0'}`} 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                      aria-hidden="true"
+                  >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
+                  </svg>
+              </div>
+              <div>
+                  <span className="font-medium text-brand-text-primary dark:text-gray-200">
+                      {t('form_thinking_mode')}
+                  </span>
+                  <p className="text-xs text-brand-text-secondary dark:text-gray-400">{t('form_thinking_mode_desc')}</p>
+              </div>
+          </label>
+          
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+          <div className="pt-4">
+            <button
+              type="submit"
+              className="w-full bg-brand-primary-light text-white font-bold py-3 px-4 rounded-lg hover:bg-brand-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              {t('form_submit_button')}
+            </button>
+          </div>
+        </form>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="landSize" className="block text-sm font-medium text-brand-text-secondary mb-1">
-            Land Size (in acres)
-          </label>
-          <input
-            type="number"
-            name="landSize"
-            id="landSize"
-            value={formData.landSize}
-            onChange={handleChange}
-            className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-light focus:border-transparent transition duration-300"
-            placeholder="e.g., 5"
-            required
-            min="0.1"
-            step="0.1"
-          />
-        </div>
 
-        <div>
-          <label htmlFor="location" className="block text-sm font-medium text-brand-text-secondary mb-1">
-            Location (City, State, Country)
-          </label>
-          <input
-            type="text"
-            name="location"
-            id="location"
-            value={formData.location}
-            onChange={handleChange}
-            className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-light focus:border-transparent transition duration-300"
-            placeholder="e.g., Nashik, Maharashtra, India"
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="soilType" className="block text-sm font-medium text-brand-text-secondary mb-1">
-            Soil Type
-          </label>
-          <input
-            type="text"
-            name="soilType"
-            id="soilType"
-            value={formData.soilType}
-            onChange={handleChange}
-            className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-light focus:border-transparent transition duration-300"
-            placeholder="e.g., Alluvial, Black, Red Clay"
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="irrigation" className="block text-sm font-medium text-brand-text-secondary mb-1">
-            Primary Irrigation Source
-          </label>
-           <input
-            type="text"
-            name="irrigation"
-            id="irrigation"
-            value={formData.irrigation}
-            onChange={handleChange}
-            className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary-light focus:border-transparent transition duration-300"
-            placeholder="e.g., Drip Irrigation, Canal, Rain-fed"
-            required
-          />
-        </div>
-        
-        {error && <p className="text-sm text-red-600">{error}</p>}
-
-        <div className="pt-4">
-          <button
-            type="submit"
-            className="w-full bg-brand-primary-light text-white font-bold py-3 px-4 rounded-lg hover:bg-brand-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition duration-300 ease-in-out transform hover:scale-105"
-          >
-            Generate Advisory
-          </button>
-        </div>
-      </form>
-    </div>
+      <LocationPicker
+        isOpen={isMapOpen}
+        initialCoords={coordinates ?? undefined}
+        onLocationSelect={handleLocationSelect}
+        onClose={() => setIsMapOpen(false)}
+      />
+    </>
   );
 };
 

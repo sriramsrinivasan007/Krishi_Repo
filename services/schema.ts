@@ -1,4 +1,5 @@
 
+
 export const cropAdvisorySchema = {
   "name": "crop_advisory_schema",
   "description": "Structured crop cultivation recommendation including costs, irrigation, profitability, and case studies.",
@@ -89,6 +90,30 @@ export const cropAdvisorySchema = {
           "roi_percentage_range": { "type": "string" }
         }
       },
+      "pest_and_disease_management": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "type": { "type": "string" },
+            "symptoms": { "type": "string" },
+            "management": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      },
+      "fertilizer_recommendations": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "stage": { "type": "string" },
+            "fertilizer": { "type": "string" },
+            "dosage_per_acre": { "type": "string" },
+            "application_notes": { "type": "string" }
+          }
+        }
+      },
       "recommended_marketplaces": {
         "type": "array",
         "items": {
@@ -121,6 +146,8 @@ export const cropAdvisorySchema = {
       "estimated_total_expense_for_user_land",
       "irrigation_schedule",
       "profitability_projection",
+      "pest_and_disease_management",
+      "fertilizer_recommendations",
       "recommended_marketplaces",
       "warnings_and_constraints",
       "data_gaps_and_assumptions"

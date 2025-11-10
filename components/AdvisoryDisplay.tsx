@@ -1,15 +1,18 @@
-import React from 'react';
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
-import type { CropAdvisory } from '../types';
+import React, { useState, useEffect } from 'react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import type { CropAdvisory, GroundingChunk } from '../types';
 import { InfoCard, SectionCard, ListCard } from './CardComponents';
-import { CalendarIcon, DropletIcon, CheckCircleIcon, WarningIcon, MarketIcon, BookIcon, DollarSignIcon, BarChartIcon, TargetIcon } from './IconComponents';
+import { CalendarIcon, DropletIcon, CheckCircleIcon, WarningIcon, MarketIcon, BookIcon, DollarSignIcon, SpeakerWaveIcon, GlobeIcon, BugIcon, NutrientIcon } from './IconComponents';
+import { useTranslation } from '../hooks/useTranslation';
+import { generateSpeech } from '../services/geminiService';
+import { decode, decodeAudioData } from '../utils/audioUtils';
+import { useTheme } from '../context/ThemeContext';
 
 interface AdvisoryDisplayProps {
   advisory: CropAdvisory;
+  sources: GroundingChunk[];
   onReset: () => void;
 }
-
-const COLORS = ['#166534', '#15803d', '#16a34a', '#22c55e', '#4ade80', '#86efac', '#14532d', '#16a34a'];
 
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
@@ -18,40 +21,101 @@ const currencyFormatter = new Intl.NumberFormat('en-IN', {
   maximumFractionDigits: 0,
 });
 
-const ExpenseChart: React.FC<{ breakdown: CropAdvisory['estimated_total_expense_for_user_land']['breakdown'] }> = ({ breakdown }) => {
-  const data = Object.entries(breakdown).map(([name, value]) => ({
-    name: name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    value,
-  })).filter(item => item.value > 0);
+const parseRangeToAvg = (rangeStr: string): number => {
+    if (!rangeStr) return 0;
+    // Updated regex to handle potential negative signs
+    const numbers = rangeStr.replace(/[₹,A-Za-z]/g, '').split('-').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+    if (numbers.length === 0) return 0;
+    if (numbers.length === 1) return numbers[0];
 
-  return (
-    <div style={{ width: '100%', height: 300 }}>
-      <ResponsiveContainer>
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            outerRadius={80}
-            fill="#8884d8"
-            dataKey="value"
-            nameKey="name"
-          >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip formatter={(value: number) => currencyFormatter.format(value)} />
-          <Legend />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
-  );
+    // Handle ranges like "-10000 - 5000"
+    if (numbers.length > 2) {
+      if (rangeStr.trim().startsWith('-')) {
+        return (-numbers[0] + numbers[1]) / 2;
+      }
+    }
+    return (numbers[0] + numbers[1]) / 2;
 };
 
 
-const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, onReset }) => {
+const ProfitabilityChart: React.FC<{ expense: number; revenue: string; profit: string }> = ({ expense, revenue, profit }) => {
+    const { t } = useTranslation();
+    const { theme } = useTheme();
+    const revenueAvg = parseRangeToAvg(revenue);
+    const profitAvg = parseRangeToAvg(profit);
+    const isLoss = profitAvg < 0;
+
+    const data = [
+        { 
+            name: t('financial_overview'), 
+            [t('expense')]: expense, 
+            [t('revenue')]: revenueAvg, 
+            [t('profit')]: profitAvg 
+        },
+    ];
+
+    const gridColor = theme === 'dark' ? '#4a5568' : '#e2e8f0'; // gray-700 : gray-300
+    const textColor = theme === 'dark' ? '#e2e8f0' : '#4b5563'; // gray-300 : gray-600
+
+    return (
+        <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer>
+                <BarChart data={data} margin={{ top: 5, right: 20, left: 30, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                    <XAxis dataKey="name" tick={{ fontSize: 12, fill: textColor }} />
+                    <YAxis tickFormatter={(value) => `${currencyFormatter.format(value).slice(0, -3)}k`} tick={{ fontSize: 12, fill: textColor }} allowDataOverflow={true} domain={['dataMin - 10000', 'auto']} />
+                    <Tooltip 
+                        formatter={(value: number) => currencyFormatter.format(value)} 
+                        cursor={{ fill: theme === 'dark' ? 'rgba(156, 163, 175, 0.1)' : 'rgba(203, 213, 225, 0.5)' }}
+                        contentStyle={{ 
+                            backgroundColor: theme === 'dark' ? '#2d3748' : '#ffffff', // gray-800
+                            borderColor: theme === 'dark' ? '#4a5568' : '#e2e8f0', // gray-700
+                            color: textColor
+                        }}
+                    />
+                    <Legend wrapperStyle={{fontSize: "0.8rem", color: textColor}} />
+                    <Bar dataKey={t('expense')} fill="#fb7185" />
+                    <Bar dataKey={t('revenue')} fill="#4ade80" />
+                    <Bar dataKey={t('profit')} fill={isLoss ? "#ef4444" : "#16a34a"} />
+                </BarChart>
+            </ResponsiveContainer>
+        </div>
+    );
+};
+
+const HarvestTimeline: React.FC<{ duration: string }> = ({ duration }) => {
+    const { t } = useTranslation();
+    const days = duration.match(/\d+/g)?.map(Number) || [0, 0];
+    const endDay = days[1] || days[0] || 0;
+    const midDay = Math.floor(endDay / 2);
+
+    return (
+        <div className="mt-2 w-full">
+            <p className="text-center font-bold text-brand-primary dark:text-green-400 text-2xl mb-4">{duration} {t('days')}</p>
+            <div className="relative w-full h-2 bg-green-200 dark:bg-green-800 rounded-full my-2">
+                <div className="absolute top-0 left-0 h-2 bg-brand-primary-light rounded-full" style={{ width: '100%' }}></div>
+                 {/* Milestones */}
+                <div className="absolute top-1/2 left-0 w-4 h-4 -translate-y-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 border-2 border-brand-primary dark:border-green-400 rounded-full"></div>
+                <div className="absolute top-1/2 left-1/2 w-4 h-4 -translate-y-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 border-2 border-brand-primary dark:border-green-400 rounded-full"></div>
+                <div className="absolute top-1/2 left-full w-4 h-4 -translate-y-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 border-2 border-brand-primary dark:border-green-400 rounded-full"></div>
+            </div>
+            <div className="relative w-full flex justify-between mt-2 text-xs text-brand-text-secondary dark:text-gray-400 font-medium">
+                <span>{t('timeline_day_0')}</span>
+                <span>{t('timeline_day_mid', { day: midDay })}</span>
+                <span>{t('timeline_day_end', { day: endDay })}</span>
+            </div>
+        </div>
+    );
+};
+
+
+const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, onReset }) => {
+  const { t, locale } = useTranslation();
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechError, setSpeechError] = useState<string | null>(null);
+  const [audioData, setAudioData] = useState<string | null>(null);
+  const [isAudioLoading, setIsAudioLoading] = useState<boolean>(true);
+
   const {
     suggested_crop_for_cultivation,
     why,
@@ -59,100 +123,290 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, onReset }) 
     estimated_total_expense_for_user_land,
     irrigation_schedule,
     profitability_projection,
+    pest_and_disease_management,
+    fertilizer_recommendations,
     recommended_marketplaces,
     key_practices_for_success,
     warnings_and_constraints,
     data_gaps_and_assumptions,
   } = advisory;
+  
+  const formatCurrencyRange = (rangeStr: string | undefined): string => {
+    if (!rangeStr) return 'N/A';
+    // Regex to find numbers (including negative and with commas) and format them as currency.
+    return rangeStr.replace(/-?[\d,]+(\.\d+)?/g, (match) => {
+        const num = parseFloat(match.replace(/,/g, ''));
+        if (isNaN(num)) return match;
+        return currencyFormatter.format(num);
+    });
+  };
 
+  useEffect(() => {
+    const fetchAudio = async () => {
+        setIsAudioLoading(true);
+        setSpeechError(null);
+        setAudioData(null);
+        try {
+            const summaryText = [
+                t('tts_summary_part1', { crop: suggested_crop_for_cultivation }),
+                t('tts_summary_part2'),
+                t('tts_summary_part3', { expense: currencyFormatter.format(estimated_total_expense_for_user_land.amount) }),
+                t('tts_summary_part4', { profit: profitability_projection.net_profit_for_user_land.amount_range })
+            ].join(' ');
+
+            const base64Audio = await generateSpeech(summaryText, locale);
+            setAudioData(base64Audio);
+        } catch (err) {
+            console.error("Failed to pre-fetch audio summary:", err);
+            setSpeechError(err instanceof Error ? err.message : 'Could not prepare audio.');
+        } finally {
+            setIsAudioLoading(false);
+        }
+    };
+
+    fetchAudio();
+  }, [advisory, locale, t]);
+
+
+  const handleSpeak = async () => {
+    if (!audioData || isSpeaking || isAudioLoading) return;
+    setIsSpeaking(true);
+    setSpeechError(null);
+    try {
+        // FIX: Handle vendor-prefixed webkitAudioContext for broader browser support.
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        const outputAudioContext = new AudioContext({ sampleRate: 24000 });
+        const audioBuffer = await decodeAudioData(decode(audioData), outputAudioContext, 24000, 1);
+        const source = outputAudioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(outputAudioContext.destination);
+        source.start();
+        source.onended = () => {
+            setIsSpeaking(false);
+            outputAudioContext.close();
+        };
+    } catch (err) {
+        setSpeechError(err instanceof Error ? err.message : 'Could not play audio.');
+        setIsSpeaking(false);
+    }
+  };
+  
+  const getButtonText = () => {
+      if (isAudioLoading) return t('tts_preparing');
+      if (isSpeaking) return t('tts_speaking');
+      return t('tts_read_summary');
+  };
+
+  const financialAssumptions = `${estimated_total_expense_for_user_land.assumptions} ${profitability_projection.farm_gate_price.assumptions}`;
+  
+  const expenseData = Object.entries(estimated_total_expense_for_user_land.breakdown)
+    .map(([name, value]) => ({
+        name: t(`expense_${name}` as any),
+        // FIX: Explicitly cast value to number for correct type inference in subsequent operations.
+        value: value as number,
+    }))
+    .filter(item => item.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  const maxExpense = expenseData.length > 0 ? expenseData[0].value : 0;
+  
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="text-center p-6 bg-white rounded-xl shadow-lg border border-gray-200">
-        <p className="text-lg text-brand-text-secondary">Recommended Crop for Cultivation</p>
-        <h1 className="text-5xl font-extrabold text-brand-text-primary tracking-tight my-2">
-          {suggested_crop_for_cultivation}
-        </h1>
-        <button
-          onClick={onReset}
-          className="mt-4 px-5 py-2 text-sm bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-primary-light transition"
-        >
-          Start New Advisory
-        </button>
+      <div 
+        className="relative text-center p-12 bg-gradient-to-br from-brand-primary to-brand-primary-light rounded-xl shadow-lg overflow-hidden"
+      >
+        <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full filter blur-md"></div>
+        <div className="absolute -bottom-12 -left-8 w-48 h-48 bg-white/10 rounded-full filter blur-md"></div>
+        <div className="relative z-10">
+            <p className="text-lg text-green-100">{t('advisory_title')}</p>
+            <h1 className="text-5xl sm:text-6xl font-extrabold text-white tracking-tight my-2 drop-shadow-lg">
+              {suggested_crop_for_cultivation}
+            </h1>
+            <div className="flex items-center justify-center space-x-4 mt-4">
+                <button
+                  onClick={onReset}
+                  className="px-5 py-2 text-sm bg-white/90 text-brand-primary font-semibold rounded-lg hover:bg-white transition-colors duration-300"
+                >
+                {t('advisory_new_button')}
+                </button>
+                 <button
+                    onClick={handleSpeak}
+                    disabled={isSpeaking || isAudioLoading || !audioData}
+                    className="px-5 py-2 text-sm bg-white/20 text-white font-semibold rounded-lg hover:bg-white/30 backdrop-blur-sm border border-white/30 transition-colors duration-300 flex items-center space-x-2 disabled:bg-gray-400/50 disabled:cursor-not-allowed"
+                >
+                    <SpeakerWaveIcon />
+                    <span>{getButtonText()}</span>
+                </button>
+            </div>
+            {speechError && <p className="text-sm text-red-200 mt-2">{speechError}</p>}
+        </div>
       </div>
 
-      {/* Why This Crop? Section */}
-      <SectionCard title="Why This Crop?" icon={<CheckCircleIcon />}>
+      <SectionCard title={t('advisory_why_title')} icon={<CheckCircleIcon />}>
         <div className="grid md:grid-cols-3 gap-6">
-          <InfoCard title="Soil Suitability" value={why.soil_suitability} />
-          <InfoCard title="Crop Rotation Benefits" value={why.crop_rotation} />
-          <InfoCard title="Market Demand" value={why.market_demand} />
+          <InfoCard title={t('advisory_why_soil')} value={why.soil_suitability} />
+          <InfoCard title={t('advisory_why_rotation')} value={why.crop_rotation} />
+          <InfoCard title={t('advisory_why_market')} value={why.market_demand} />
         </div>
       </SectionCard>
       
-      {/* Timeline Section */}
-       <SectionCard title="Harvest Timeline" icon={<CalendarIcon />}>
-          <div className="grid md:grid-cols-2 gap-6">
-            <InfoCard title="Duration" value={`${time_to_complete_harvest.duration_days_range} days`} />
-            <InfoCard title="Season Window" value={time_to_complete_harvest.season_window} />
+      <SectionCard title={t('advisory_timeline_title')} icon={<CalendarIcon />}>
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="w-full md:w-2/3">
+                <HarvestTimeline duration={time_to_complete_harvest.duration_days_range} />
+            </div>
+            <div className="w-full md:w-1/3">
+                 <InfoCard title={t('advisory_timeline_season')} value={time_to_complete_harvest.season_window} />
+            </div>
           </div>
-          <p className="text-sm text-gray-500 mt-4 italic">Note: {time_to_complete_harvest.assumptions}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 italic">{t('note')}: {time_to_complete_harvest.assumptions}</p>
       </SectionCard>
 
-      {/* Financials Section */}
-       <div className="grid lg:grid-cols-5 gap-8">
-        <div className="lg:col-span-3">
-            <SectionCard title="Estimated Expenses" icon={<DollarSignIcon />}>
-                <div className="text-center mb-4">
-                    <p className="text-lg text-brand-text-secondary">Total Estimated Cost</p>
-                    <p className="text-4xl font-bold text-brand-text-primary">{currencyFormatter.format(estimated_total_expense_for_user_land.amount)}</p>
+      <SectionCard title={t('financial_overview')} icon={<DollarSignIcon />}>
+        <div className="grid lg:grid-cols-2 gap-8 items-start">
+            <div className="border-r-0 lg:border-r lg:dark:border-gray-600 lg:pr-8">
+                <h3 className="text-lg font-semibold text-brand-text-primary dark:text-gray-200 text-center">{t('advisory_expenses_title')}</h3>
+                <p className="text-3xl font-bold text-red-500 text-center mb-4">{currencyFormatter.format(estimated_total_expense_for_user_land.amount)}</p>
+                <div className="space-y-3 mt-4 text-sm">
+                    {expenseData.map(({ name, value }) => (
+                        <div key={name} className="grid grid-cols-3 gap-2 items-center">
+                            <span className="font-medium text-brand-text-secondary dark:text-gray-400 truncate col-span-1">{name}</span>
+                            <div className="col-span-2">
+                                <div className="flex items-center space-x-2">
+                                    <div className="w-full bg-green-100 dark:bg-gray-700 rounded-full h-4">
+                                        <div 
+                                            className="bg-brand-primary-light h-4 rounded-full" 
+                                            style={{ width: maxExpense > 0 ? `${(value / maxExpense) * 100}%` : '0%'}}
+                                            role="progressbar"
+                                            aria-valuenow={value}
+                                            aria-valuemin={0}
+                                            aria-valuemax={maxExpense}
+                                            aria-label={`${name}: ${currencyFormatter.format(value)}`}
+                                        ></div>
+                                    </div>
+                                    <span className="font-semibold text-brand-text-primary dark:text-gray-200 w-24 text-right">{currencyFormatter.format(value)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
-                 <ExpenseChart breakdown={estimated_total_expense_for_user_land.breakdown} />
-                 <p className="text-sm text-gray-500 mt-4 italic">Note: {estimated_total_expense_for_user_land.assumptions}</p>
-            </SectionCard>
+            </div>
+            <div>
+                 <h3 className="text-lg font-semibold text-brand-text-primary dark:text-gray-200 text-center">{t('advisory_profit_title')}</h3>
+                 <ProfitabilityChart 
+                    expense={estimated_total_expense_for_user_land.amount} 
+                    revenue={profitability_projection.gross_revenue_for_user_land.amount_range} 
+                    profit={profitability_projection.net_profit_for_user_land.amount_range} 
+                 />
+            </div>
         </div>
-        <div className="lg:col-span-2">
-            <SectionCard title="Profitability Projection" icon={<BarChartIcon />}>
-                 <div className="space-y-4">
-                    <InfoCard title="Expected Yield" value={`${profitability_projection.expected_yield.value_range_per_acre} ${profitability_projection.expected_yield.unit}`} />
-                    <InfoCard title="Assumed Farm Gate Price" value={`${currencyFormatter.format(profitability_projection.farm_gate_price.price_per_quintal_assumed)} / quintal`} />
-                    <InfoCard title="Gross Revenue" value={profitability_projection.gross_revenue_for_user_land.amount_range} isHighlight={true} />
-                    <InfoCard title="Net Profit" value={profitability_projection.net_profit_for_user_land.amount_range} isHighlight={true} />
-                    <InfoCard title="Return on Investment (ROI)" value={profitability_projection.roi_percentage_range} isHighlight={true} />
-                 </div>
-            </SectionCard>
+        <div className="mt-8 grid md:grid-cols-3 gap-4">
+            <InfoCard title={t('advisory_profit_revenue')} value={formatCurrencyRange(profitability_projection.gross_revenue_for_user_land.amount_range)} isHighlight />
+            <InfoCard title={t('advisory_profit_net')} value={formatCurrencyRange(profitability_projection.net_profit_for_user_land.amount_range)} isHighlight />
+            <InfoCard title={t('advisory_profit_roi')} value={profitability_projection.roi_percentage_range} isHighlight />
         </div>
-       </div>
-
-      {/* Irrigation Section */}
-       <SectionCard title="Irrigation Schedule" icon={<DropletIcon />}>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 italic">{t('note')}: {financialAssumptions}</p>
+      </SectionCard>
+      
+       <SectionCard title={t('advisory_irrigation_title')} icon={<DropletIcon />}>
           <div className="grid md:grid-cols-3 gap-6">
-            <InfoCard title="Frequency" value={irrigation_schedule.frequency} />
-            <InfoCard title="Recommended Method" value={irrigation_schedule.method} />
-            <InfoCard title="Seasonal Adjustments" value={irrigation_schedule.seasonal_adjustments} />
+            <InfoCard title={t('advisory_irrigation_frequency')} value={irrigation_schedule.frequency} />
+            <InfoCard title={t('advisory_irrigation_method')} value={irrigation_schedule.method} />
+            <InfoCard title={t('advisory_irrigation_seasonal')} value={irrigation_schedule.seasonal_adjustments} />
           </div>
-           <p className="text-sm text-gray-600 bg-green-50 p-3 rounded-md mt-4"><strong>Note:</strong> {irrigation_schedule.notes}</p>
+           <p className="text-sm text-gray-600 dark:text-gray-300 bg-green-50 dark:bg-green-900/50 p-3 rounded-md mt-4"><strong>{t('note')}:</strong> {irrigation_schedule.notes}</p>
       </SectionCard>
 
-      {/* Guidance Section */}
+      <SectionCard title={t('advisory_fertilizer_title')} icon={<NutrientIcon />}>
+          <div className="space-y-4">
+              {/* Header */}
+              <div className="hidden md:grid md:grid-cols-12 gap-4 font-bold text-sm text-brand-text-secondary dark:text-gray-400 px-4">
+                  <div className="col-span-3">{t('fert_stage')}</div>
+                  <div className="col-span-3">{t('fert_fertilizer')}</div>
+                  <div className="col-span-2">{t('fert_dosage')}</div>
+                  <div className="col-span-4">{t('fert_notes')}</div>
+              </div>
+              {fertilizer_recommendations?.map((item, index) => (
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-x-4 gap-y-2 p-4 bg-green-50 dark:bg-gray-700/50 rounded-lg border dark:border-gray-200 dark:border-gray-600">
+                      <div className="col-span-1 md:col-span-3 font-semibold text-brand-text-primary dark:text-gray-200">
+                          <span className="md:hidden font-bold text-brand-text-secondary dark:text-gray-400">{t('fert_stage')}: </span>{item.stage}
+                      </div>
+                      <div className="col-span-1 md:col-span-3">
+                          <span className="md:hidden font-bold text-brand-text-secondary dark:text-gray-400">{t('fert_fertilizer')}: </span>{item.fertilizer}
+                      </div>
+                      <div className="col-span-1 md:col-span-2">
+                          <span className="md:hidden font-bold text-brand-text-secondary dark:text-gray-400">{t('fert_dosage')}: </span>{item.dosage_per_acre}
+                      </div>
+                      <div className="col-span-1 md:col-span-4 text-sm text-gray-600 dark:text-gray-300">
+                          <span className="md:hidden font-bold text-brand-text-secondary dark:text-gray-400">{t('fert_notes')}: </span>{item.application_notes}
+                      </div>
+                  </div>
+              ))}
+          </div>
+      </SectionCard>
+      
+      <SectionCard title={t('advisory_pest_title')} icon={<BugIcon />}>
+        <div className="space-y-6">
+            {pest_and_disease_management?.map((item, index) => (
+                <div key={index} className="p-4 bg-red-50 dark:bg-gray-700/50 rounded-lg border border-red-200 dark:border-gray-600">
+                    <h4 className="font-bold text-lg text-red-800 dark:text-red-300">{item.name} <span className="text-sm font-normal text-red-600 dark:text-red-400 ml-2">({item.type})</span></h4>
+                    <p className="mt-2 text-sm text-brand-text-secondary dark:text-gray-300"><strong>{t('pest_symptoms')}:</strong> {item.symptoms}</p>
+                    <div className="mt-3">
+                        <p className="text-sm font-semibold text-brand-text-primary dark:text-gray-200 mb-1">{t('pest_management')}:</p>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-brand-text-secondary dark:text-gray-300">
+                            {item.management.map((tip, i) => <li key={i}>{tip}</li>)}
+                        </ul>
+                    </div>
+                </div>
+            ))}
+        </div>
+      </SectionCard>
+
+
       <div className="grid lg:grid-cols-2 gap-8">
-        <ListCard title="Key Practices for Success" items={key_practices_for_success} icon={<CheckCircleIcon />} itemClassName="text-green-800 bg-green-50" />
-        <ListCard title="Warnings & Constraints" items={warnings_and_constraints} icon={<WarningIcon />} itemClassName="text-red-800 bg-red-50" />
+        <ListCard title={t('advisory_practices_title')} items={key_practices_for_success} icon={<CheckCircleIcon />} itemClassName="text-green-800 bg-green-50 dark:bg-green-900/50 dark:text-green-200" />
+        <ListCard title={t('advisory_warnings_title')} items={warnings_and_constraints} icon={<WarningIcon />} itemClassName="text-red-800 bg-red-50 dark:bg-red-900/50 dark:text-red-200" />
       </div>
 
-       {/* Marketplaces Section */}
-       <SectionCard title="Recommended Marketplaces" icon={<MarketIcon />}>
+       <SectionCard title={t('advisory_marketplaces_title')} icon={<MarketIcon />}>
           <div className="space-y-4">
              {recommended_marketplaces.map((market, index) => (
-               <div key={index} className="p-4 bg-gray-50 rounded-lg border">
-                 <h4 className="font-bold text-brand-text-primary">{market.name} <span className="text-sm font-normal text-gray-500 ml-2">({market.type} - {market.region})</span></h4>
-                 <p className="text-sm text-brand-text-secondary">{market.why_suitable}</p>
+               <div key={index} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border dark:border-gray-600">
+                 <h4 className="font-bold text-brand-text-primary dark:text-gray-200">{market.name} <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">({market.type} - {market.region})</span></h4>
+                 <p className="text-sm text-brand-text-secondary dark:text-gray-300">{market.why_suitable}</p>
                </div>
              ))}
           </div>
       </SectionCard>
 
-      {/* Assumptions Section */}
-      <ListCard title="Data Gaps & Assumptions" items={data_gaps_and_assumptions} icon={<BookIcon />} itemClassName="text-gray-700 bg-gray-100" />
+      <ListCard title={t('advisory_assumptions_title')} items={data_gaps_and_assumptions} icon={<BookIcon />} itemClassName="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50" />
+      
+      {sources.length > 0 && (
+        <SectionCard title={t('advisory_sources_title')} icon={<GlobeIcon />}>
+            <p className="text-brand-text-secondary dark:text-gray-400 mb-4 -mt-2 text-sm">
+                {t('advisory_sources_subtitle')}
+            </p>
+            <div className="space-y-3">
+                {sources.map((source, index) => {
+                    const chunk = source.web || source.maps;
+                    if (!chunk || !chunk.uri) return null;
+                    return (
+                        <a 
+                            key={index} 
+                            href={chunk.uri} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="block p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+                        >
+                            <p className="font-semibold text-brand-primary dark:text-green-400 group-hover:underline truncate">{chunk.title}</p>
+                            <p className="text-sm text-brand-text-secondary dark:text-gray-400 truncate">{chunk.uri}</p>
+                        </a>
+                    );
+                })}
+            </div>
+        </SectionCard>
+      )}
+
     </div>
   );
 };

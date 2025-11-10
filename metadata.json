@@ -1,5 +1,8 @@
 {
-  "name": "Krishi GPT",
+  "name": "Krishi.AI",
   "description": "An intelligent web application that provides detailed crop cultivation recommendations. Users input their land details, and the app leverages the Gemini API to generate a structured advisory including costs, irrigation schedules, profitability projections, and more, presented in a clear and visually appealing dashboard.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone",
+    "geolocation"
+  ]
 }
