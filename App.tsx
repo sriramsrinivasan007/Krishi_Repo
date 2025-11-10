@@ -1,15 +1,17 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, lazy, Suspense } from 'react';
 import { generateCropAdvisory } from './services/geminiService';
 import type { AdvisoryResult, UserInput, User, Coordinates } from './types';
-import AdvisoryDisplay from './components/AdvisoryDisplay';
 import InputForm from './components/InputForm';
 import LoadingSpinner from './components/LoadingSpinner';
 import LoginPage from './components/LoginPage';
 import { FarmerIcon, ChatBubbleIcon } from './components/IconComponents';
 import LanguageSelector from './components/LanguageSelector';
 import { useTranslation } from './hooks/useTranslation';
-import Conversation from './components/Conversation';
 import ThemeToggle from './components/ThemeToggle';
+
+// Lazy-load large components
+const AdvisoryDisplay = lazy(() => import('./components/AdvisoryDisplay'));
+const Conversation = lazy(() => import('./components/Conversation'));
 
 type View = 'advisory' | 'conversation';
 
@@ -97,42 +99,48 @@ const App: React.FC = () => {
             </div>
         </div>
 
-        {view === 'advisory' && (
-          <>
-            {!advisoryResult && !isLoading && !error && (
-              <InputForm onGenerate={handleGenerateAdvisory} />
-            )}
-            
-            {isLoading && (
-              <div className="flex flex-col items-center justify-center text-center h-96">
+        <Suspense fallback={
+            <div className="flex flex-col items-center justify-center text-center h-96">
                 <LoadingSpinner />
-                <p className="text-xl text-brand-primary-light mt-6 font-semibold">{t('loading_title')}</p>
-                <p className="text-md text-brand-text-secondary dark:text-gray-400 mt-2">{t('loading_subtitle')}</p>
-              </div>
+            </div>
+        }>
+            {view === 'advisory' && (
+              <>
+                {!advisoryResult && !isLoading && !error && (
+                  <InputForm onGenerate={handleGenerateAdvisory} />
+                )}
+                
+                {isLoading && (
+                  <div className="flex flex-col items-center justify-center text-center h-96">
+                    <LoadingSpinner />
+                    <p className="text-xl text-brand-primary-light mt-6 font-semibold">{t('loading_title')}</p>
+                    <p className="text-md text-brand-text-secondary dark:text-gray-400 mt-2">{t('loading_subtitle')}</p>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="text-center p-8 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 rounded-lg shadow-md">
+                    <h2 className="text-2xl font-bold mb-4">{t('error_title')}</h2>
+                    <p className="mb-6">{error}</p>
+                    <button
+                      onClick={handleReset}
+                      className="px-6 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition duration-300"
+                    >
+                      {t('try_again')}
+                    </button>
+                  </div>
+                )}
+
+                {advisoryResult && !isLoading && (
+                  <AdvisoryDisplay advisory={advisoryResult.advisory} sources={advisoryResult.sources} onReset={handleReset} />
+                )}
+              </>
             )}
 
-            {error && (
-              <div className="text-center p-8 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 rounded-lg shadow-md">
-                <h2 className="text-2xl font-bold mb-4">{t('error_title')}</h2>
-                <p className="mb-6">{error}</p>
-                <button
-                  onClick={handleReset}
-                  className="px-6 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition duration-300"
-                >
-                  {t('try_again')}
-                </button>
-              </div>
+            {view === 'conversation' && (
+                <Conversation />
             )}
-
-            {advisoryResult && !isLoading && (
-              <AdvisoryDisplay advisory={advisoryResult.advisory} sources={advisoryResult.sources} onReset={handleReset} />
-            )}
-          </>
-        )}
-
-        {view === 'conversation' && (
-            <Conversation />
-        )}
+        </Suspense>
 
       </main>
       

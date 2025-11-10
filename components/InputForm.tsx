@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import type { UserInput, Coordinates } from '../types';
 import { useTranslation } from '../hooks/useTranslation';
-import LocationPicker, { type LocationData } from './LocationPicker';
 import { MapPinIcon, MicrophoneIcon } from './IconComponents';
+
+const LocationPicker = lazy(() => import('./LocationPicker'));
 
 type VoiceField = keyof Omit<UserInput, 'location' | 'landSize'> | 'landSize';
 
@@ -149,7 +150,7 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
     onGenerate(formData, enableThinking, coordinates);
   };
 
-  const handleLocationSelect = (locationData: LocationData) => {
+  const handleLocationSelect = (locationData: any) => {
     setFormData(prev => ({ ...prev, location: locationData.name }));
     setCoordinates(locationData.coords);
     setIsMapOpen(false);
@@ -354,12 +355,14 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
         </form>
       </div>
 
-      <LocationPicker
-        isOpen={isMapOpen}
-        initialCoords={coordinates ?? undefined}
-        onLocationSelect={handleLocationSelect}
-        onClose={() => setIsMapOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <LocationPicker
+          isOpen={isMapOpen}
+          initialCoords={coordinates ?? undefined}
+          onLocationSelect={handleLocationSelect}
+          onClose={() => setIsMapOpen(false)}
+        />
+      </Suspense>
     </>
   );
 };
