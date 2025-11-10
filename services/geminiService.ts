@@ -4,10 +4,11 @@ import { cropAdvisorySchema } from './schema';
 import { convertSchemaForGemini } from '../utils/schemaConverter';
 import { languages, voiceMap } from '../locales/translations';
 
-// Initialize the Google GenAI client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-async function getGroundedContextAndSources(location: string, coordinates: Coordinates | null): Promise<{ context: string, sources: GroundingChunk[] }> {
+async function getGroundedContextAndSources(
+  location: string, 
+  coordinates: Coordinates | null,
+  ai: GoogleGenAI
+): Promise<{ context: string, sources: GroundingChunk[] }> {
   try {
     const prompt = `
       Based on the location "${location}", provide a concise, up-to-date analysis of the agricultural market.
@@ -56,11 +57,12 @@ async function getGroundedContextAndSources(location: string, coordinates: Coord
 }
 
 export async function generateCropAdvisory(userInput: UserInput, locale: Locale, enableThinking: boolean, coordinates: Coordinates | null): Promise<AdvisoryResult> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const { landSize, location, soilType, irrigation, previousCrop } = userInput;
   const languageName = languages.find(lang => lang.code === locale)?.name || 'English';
 
   // Step 1: Get grounded, local context from Search and Maps APIs.
-  const { context: groundedContext, sources } = await getGroundedContextAndSources(location, coordinates);
+  const { context: groundedContext, sources } = await getGroundedContextAndSources(location, coordinates, ai);
 
   // Step 2: Use the grounded context to generate the structured advisory.
   const prompt = `
@@ -129,6 +131,7 @@ export async function generateCropAdvisory(userInput: UserInput, locale: Locale,
 
 
 export async function generateSpeech(text: string, locale: Locale): Promise<string> {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const voiceName = voiceMap[locale] || 'Kore';
         const response = await ai.models.generateContent({
