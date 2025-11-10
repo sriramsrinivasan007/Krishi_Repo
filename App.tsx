@@ -1,5 +1,4 @@
 import React, { useState, useCallback, lazy, Suspense } from 'react';
-import { generateCropAdvisory } from './services/geminiService';
 import type { AdvisoryResult, UserInput, User, Coordinates } from './types';
 import InputForm from './components/InputForm';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -32,6 +31,7 @@ const App: React.FC = () => {
     setError(null);
     setAdvisoryResult(null);
     try {
+      const { generateCropAdvisory } = await import('./services/geminiService');
       const result = await generateCropAdvisory(userInput, locale, enableThinking, coordinates);
       setAdvisoryResult(result);
     } catch (err) {
