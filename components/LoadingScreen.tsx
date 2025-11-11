@@ -6,7 +6,7 @@ const LoadingScreen: React.FC = () => {
     const { t } = useTranslation();
     const [messageIndex, setMessageIndex] = useState(0);
 
-    // FIX: Memoize messages array to prevent re-creation on every render, which would reset the interval.
+    // Memoize messages array to prevent re-creation on every render, which would reset the interval.
     const messages = React.useMemo(() => [
         t('loading_message_1'),
         t('loading_message_2'),

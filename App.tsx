@@ -156,18 +156,22 @@ const App: React.FC = () => {
               <Header />
               <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-grow flex items-center justify-center">
                   <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 max-w-lg">
-                      <h2 className="text-2xl font-bold text-brand-text-primary dark:text-gray-100 mb-4">API Key Required</h2>
+                      <h2 className="text-2xl font-bold text-brand-text-primary dark:text-gray-100 mb-4">{t('api_key_required_title')}</h2>
                       <p className="text-brand-text-secondary dark:text-gray-400 mb-6">
-                          To use the AI-powered features of Krishi.AI, you need to select a Google AI Studio API key.
+                          {t('api_key_required_desc')}
                       </p>
                       <button
                           onClick={handleSelectKey}
                           className="w-full bg-brand-primary-light text-white font-bold py-3 px-4 rounded-lg hover:bg-brand-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition duration-300 ease-in-out transform hover:scale-105"
                       >
-                          Select API Key
+                          {t('api_key_required_button')}
                       </button>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
-                        Note: Project billing may be required. Please see the <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="underline hover:text-brand-primary">billing documentation</a> for details.
+                        {t('api_key_required_note_1')}
+                        <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="underline hover:text-brand-primary">
+                            {t('api_key_required_note_link')}
+                        </a>
+                        {t('api_key_required_note_2')}
                       </p>
                   </div>
               </main>

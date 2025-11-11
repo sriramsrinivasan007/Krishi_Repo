@@ -31,7 +31,7 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
   const [voiceError, setVoiceError] = useState('');
   const recognitionRef = useRef<any>(null);
 
-  // FIX: Cast window to `any` to access non-standard browser APIs for Speech Recognition.
+  // Cast window to `any` to access non-standard browser APIs for Speech Recognition.
   const SpeechRecognition = typeof window !== 'undefined' ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) : null;
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-// FIX: Removed `LiveSession` as it is not an exported member of the library.
+// Removed `LiveSession` as it is not an exported member of the library.
 import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
 import { useTranslation } from '../hooks/useTranslation';
 import { FarmerIcon, MicrophoneIcon, StopCircleIcon } from './IconComponents';
@@ -32,7 +32,7 @@ const Conversation: React.FC<ConversationProps> = ({ onApiError }) => {
     const [currentInput, setCurrentInput] = useState('');
     const [currentOutput, setCurrentOutput] = useState('');
 
-    // FIX: Changed type from `Promise<LiveSession>` to `Promise<any>` because `LiveSession` is not an exported type.
+    // Changed type from `Promise<LiveSession>` to `Promise<any>` because `LiveSession` is not an exported type.
     const sessionPromiseRef = useRef<Promise<any> | null>(null);
     const inputAudioContextRef = useRef<AudioContext | null>(null);
     const outputAudioContextRef = useRef<AudioContext | null>(null);

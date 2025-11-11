@@ -190,7 +190,7 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
     setIsSpeaking(true);
     setSpeechError(null);
     try {
-        // FIX: Handle vendor-prefixed webkitAudioContext for broader browser support.
+        // Handle vendor-prefixed webkitAudioContext for broader browser support.
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
         const outputAudioContext = new AudioContext({ sampleRate: 24000 });
         const audioBuffer = await decodeAudioData(decode(audioData), outputAudioContext, 24000, 1);
@@ -516,7 +516,7 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
                             rel="noopener noreferrer"
                             className="block p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
                         >
-                            {/* FIX: Use uri as a fallback for the title, as title can be optional. */}
+                            {/* Use uri as a fallback for the title, as title can be optional. */}
                             <p className="font-semibold text-brand-primary dark:text-green-400 group-hover:underline truncate">{chunk.title || chunk.uri}</p>
                             <p className="text-sm text-brand-text-secondary dark:text-gray-400 truncate">{chunk.uri}</p>
                         </a>

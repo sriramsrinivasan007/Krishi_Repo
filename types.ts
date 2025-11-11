@@ -1,4 +1,4 @@
-// FIX: Replaced incorrect file content with proper type definitions for the application.
+// Replaced incorrect file content with proper type definitions for the application.
 
 export interface User {
   id: string;
@@ -23,13 +23,13 @@ export interface UserInput {
 
 export type Locale = 'en' | 'hi' | 'kn' | 'te' | 'ta' | 'ml';
 
-// FIX: Made uri and title optional to match the GroundingChunk type from the @google/genai SDK.
+// Made uri and title optional to match the GroundingChunk type from the @google/genai SDK.
 interface WebChunk {
   uri?: string;
   title?: string;
 }
 
-// FIX: Made uri and title optional to match the GroundingChunk type from the @google/genai SDK.
+// Made uri and title optional to match the GroundingChunk type from the @google/genai SDK.
 interface MapsChunk {
   uri?: string;
   title?: string;
