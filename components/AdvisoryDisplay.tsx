@@ -127,22 +127,6 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
   const [isWeatherLoading, setIsWeatherLoading] = useState(true);
   const [weatherError, setWeatherError] = useState<string | null>(null);
 
-  const {
-    suggested_crop_for_cultivation,
-    why,
-    soil_health_analysis,
-    time_to_complete_harvest,
-    estimated_total_expense_for_user_land,
-    irrigation_schedule,
-    profitability_projection,
-    pest_and_disease_management,
-    fertilizer_recommendations,
-    recommended_marketplaces,
-    key_practices_for_success,
-    warnings_and_constraints,
-    data_gaps_and_assumptions,
-  } = advisory;
-  
   const formatCurrencyRange = (rangeStr: string | undefined): string => {
     if (!rangeStr) return 'N/A';
     // Regex to find numbers (including negative and with commas) and format them as currency.
@@ -160,10 +144,10 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
         setAudioData(null);
         try {
             const summaryText = [
-                t('tts_summary_part1', { crop: suggested_crop_for_cultivation }),
+                t('tts_summary_part1', { crop: advisory?.suggested_crop_for_cultivation ?? 'the suggested crop' }),
                 t('tts_summary_part2'),
-                t('tts_summary_part3', { expense: currencyFormatter.format(estimated_total_expense_for_user_land.amount) }),
-                t('tts_summary_part4', { profit: profitability_projection.net_profit_for_user_land.amount_range })
+                t('tts_summary_part3', { expense: currencyFormatter.format(advisory?.estimated_total_expense_for_user_land?.amount ?? 0) }),
+                t('tts_summary_part4', { profit: advisory?.profitability_projection?.net_profit_for_user_land?.amount_range ?? 'an unknown amount' })
             ].join(' ');
 
             const base64Audio = await generateSpeech(summaryText, locale);
@@ -224,12 +208,11 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
       return t('tts_read_summary');
   };
 
-  const financialAssumptions = `${estimated_total_expense_for_user_land.assumptions} ${profitability_projection.farm_gate_price.assumptions}`;
+  const financialAssumptions = `${advisory?.estimated_total_expense_for_user_land?.assumptions ?? ''} ${advisory?.profitability_projection?.farm_gate_price?.assumptions ?? ''}`;
   
-  const expenseData = Object.entries(estimated_total_expense_for_user_land.breakdown)
+  const expenseData = Object.entries(advisory?.estimated_total_expense_for_user_land?.breakdown ?? {})
     .map(([name, value]) => ({
         name: t(`expense_${name}` as any),
-        // FIX: Explicitly cast value to number for correct type inference in subsequent operations.
         value: value as number,
     }))
     .filter(item => item.value > 0)
@@ -247,7 +230,7 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
         <div className="relative z-10">
             <p className="text-lg text-green-100">{t('advisory_title')}</p>
             <h1 className="text-5xl sm:text-6xl font-extrabold text-white tracking-tight my-2 drop-shadow-lg">
-              {suggested_crop_for_cultivation}
+              {advisory?.suggested_crop_for_cultivation ?? '...'}
             </h1>
             <div className="flex items-center justify-center space-x-4 mt-4">
                 <button
@@ -271,17 +254,17 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
 
       <SectionCard title={t('advisory_why_title')} icon={<CheckCircleIcon />}>
         <div className="grid md:grid-cols-3 gap-6">
-          <InfoCard title={t('advisory_why_soil')} value={why.soil_suitability} />
-          <InfoCard title={t('advisory_why_rotation')} value={why.crop_rotation} />
-          <InfoCard title={t('advisory_why_market')} value={why.market_demand} />
+          <InfoCard title={t('advisory_why_soil')} value={advisory?.why?.soil_suitability ?? 'N/A'} />
+          <InfoCard title={t('advisory_why_rotation')} value={advisory?.why?.crop_rotation ?? 'N/A'} />
+          <InfoCard title={t('advisory_why_market')} value={advisory?.why?.market_demand ?? 'N/A'} />
         </div>
       </SectionCard>
 
-      {soil_health_analysis && (
+      {advisory?.soil_health_analysis && (
           <SectionCard title={t('advisory_soil_health_title')} icon={<SoilIcon />}>
-              <p className="text-brand-text-secondary dark:text-gray-300 mb-6">{soil_health_analysis.assessment}</p>
+              <p className="text-brand-text-secondary dark:text-gray-300 mb-6">{advisory.soil_health_analysis.assessment}</p>
               <div className="space-y-6">
-                  {soil_health_analysis.recommendations_for_improvement.map((rec, index) => (
+                  {advisory.soil_health_analysis.recommendations_for_improvement?.map((rec, index) => (
                       <div key={index} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border dark:border-gray-600">
                           <h4 className="font-bold text-lg text-brand-primary dark:text-green-300 mb-4">{rec.practice}</h4>
                           <div className="space-y-4">
@@ -303,7 +286,7 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
               </div>
                <div className="mt-6">
                   <h4 className="font-semibold text-brand-text-primary dark:text-gray-200 mb-1">{t('soil_organic_link')}</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{soil_health_analysis.organic_farming_link}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{advisory.soil_health_analysis.organic_farming_link}</p>
               </div>
           </SectionCard>
       )}
@@ -323,20 +306,20 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
       <SectionCard title={t('advisory_timeline_title')} icon={<CalendarIcon />}>
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="w-full md:w-2/3">
-                <HarvestTimeline duration={time_to_complete_harvest.duration_days_range} />
+                <HarvestTimeline duration={advisory?.time_to_complete_harvest?.duration_days_range ?? 'N/A'} />
             </div>
             <div className="w-full md:w-1/3">
-                 <InfoCard title={t('advisory_timeline_season')} value={time_to_complete_harvest.season_window} />
+                 <InfoCard title={t('advisory_timeline_season')} value={advisory?.time_to_complete_harvest?.season_window ?? 'N/A'} />
             </div>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 italic">{t('note')}: {time_to_complete_harvest.assumptions}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 italic">{t('note')}: {advisory?.time_to_complete_harvest?.assumptions ?? ''}</p>
       </SectionCard>
 
       <SectionCard title={t('financial_overview')} icon={<DollarSignIcon />}>
         <div className="grid lg:grid-cols-2 gap-8 items-start">
             <div className="border-r-0 lg:border-r lg:dark:border-gray-600 lg:pr-8">
                 <h3 className="text-lg font-semibold text-brand-text-primary dark:text-gray-200 text-center">{t('advisory_expenses_title')}</h3>
-                <p className="text-3xl font-bold text-red-500 text-center mb-4">{currencyFormatter.format(estimated_total_expense_for_user_land.amount)}</p>
+                <p className="text-3xl font-bold text-red-500 text-center mb-4">{currencyFormatter.format(advisory?.estimated_total_expense_for_user_land?.amount ?? 0)}</p>
                 <div className="space-y-3 mt-4 text-sm">
                     {expenseData.map(({ name, value }) => (
                         <div key={name} className="grid grid-cols-3 gap-2 items-center">
@@ -364,27 +347,27 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
             <div>
                  <h3 className="text-lg font-semibold text-brand-text-primary dark:text-gray-200 text-center">{t('advisory_profit_title')}</h3>
                  <ProfitabilityChart 
-                    expense={estimated_total_expense_for_user_land.amount} 
-                    revenue={profitability_projection.gross_revenue_for_user_land.amount_range} 
-                    profit={profitability_projection.net_profit_for_user_land.amount_range} 
+                    expense={advisory?.estimated_total_expense_for_user_land?.amount ?? 0} 
+                    revenue={advisory?.profitability_projection?.gross_revenue_for_user_land?.amount_range ?? '0'} 
+                    profit={advisory?.profitability_projection?.net_profit_for_user_land?.amount_range ?? '0'} 
                  />
             </div>
         </div>
         <div className="mt-8 grid md:grid-cols-3 gap-4">
-            <InfoCard title={t('advisory_profit_revenue')} value={formatCurrencyRange(profitability_projection.gross_revenue_for_user_land.amount_range)} isHighlight />
-            <InfoCard title={t('advisory_profit_net')} value={formatCurrencyRange(profitability_projection.net_profit_for_user_land.amount_range)} isHighlight />
-            <InfoCard title={t('advisory_profit_roi')} value={profitability_projection.roi_percentage_range} isHighlight />
+            <InfoCard title={t('advisory_profit_revenue')} value={formatCurrencyRange(advisory?.profitability_projection?.gross_revenue_for_user_land?.amount_range)} />
+            <InfoCard title={t('advisory_profit_net')} value={formatCurrencyRange(advisory?.profitability_projection?.net_profit_for_user_land?.amount_range)} />
+            <InfoCard title={t('advisory_profit_roi')} value={advisory?.profitability_projection?.roi_percentage_range ?? 'N/A'} />
         </div>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 italic">{t('note')}: {financialAssumptions}</p>
       </SectionCard>
       
        <SectionCard title={t('advisory_irrigation_title')} icon={<DropletIcon />}>
           <div className="grid md:grid-cols-3 gap-6">
-            <InfoCard title={t('advisory_irrigation_frequency')} value={irrigation_schedule.frequency} />
-            <InfoCard title={t('advisory_irrigation_method')} value={irrigation_schedule.method} />
-            <InfoCard title={t('advisory_irrigation_seasonal')} value={irrigation_schedule.seasonal_adjustments} />
+            <InfoCard title={t('advisory_irrigation_frequency')} value={advisory?.irrigation_schedule?.frequency ?? 'N/A'} />
+            <InfoCard title={t('advisory_irrigation_method')} value={advisory?.irrigation_schedule?.method ?? 'N/A'} />
+            <InfoCard title={t('advisory_irrigation_seasonal')} value={advisory?.irrigation_schedule?.seasonal_adjustments ?? 'N/A'} />
           </div>
-           <p className="text-sm text-gray-600 dark:text-gray-300 bg-green-50 dark:bg-green-900/50 p-3 rounded-md mt-4"><strong>{t('note')}:</strong> {irrigation_schedule.notes}</p>
+           <p className="text-sm text-gray-600 dark:text-gray-300 bg-green-50 dark:bg-green-900/50 p-3 rounded-md mt-4"><strong>{t('note')}:</strong> {advisory?.irrigation_schedule?.notes ?? ''}</p>
       </SectionCard>
 
       <SectionCard title={t('advisory_fertilizer_title')} icon={<NutrientIcon />}>
@@ -396,7 +379,7 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
                   <div className="col-span-2">{t('fert_dosage')}</div>
                   <div className="col-span-4">{t('fert_notes')}</div>
               </div>
-              {fertilizer_recommendations?.map((item, index) => (
+              {advisory?.fertilizer_recommendations?.map((item, index) => (
                   <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-x-4 gap-y-2 p-4 bg-green-50 dark:bg-gray-700/50 rounded-lg border dark:border-gray-200 dark:border-gray-600">
                       <div className="col-span-1 md:col-span-3 font-semibold text-brand-text-primary dark:text-gray-200">
                           <span className="md:hidden font-bold text-brand-text-secondary dark:text-gray-400">{t('fert_stage')}: </span>{item.stage}
@@ -417,7 +400,7 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
       
       <SectionCard title={t('advisory_pest_title')} icon={<BugIcon />}>
         <div className="space-y-6">
-            {pest_and_disease_management?.map((item, index) => (
+            {advisory?.pest_and_disease_management?.map((item, index) => (
                 <div key={index} className="p-4 bg-red-50 dark:bg-gray-700/50 rounded-lg border border-red-200 dark:border-gray-600">
                     <h4 className="font-bold text-lg text-red-800 dark:text-red-300">{item.name} <span className="text-sm font-normal text-red-600 dark:text-red-400 ml-2">({item.type})</span></h4>
                     <p className="mt-2 text-sm text-brand-text-secondary dark:text-gray-300"><strong>{t('pest_symptoms')}:</strong> {item.symptoms}</p>
@@ -434,13 +417,13 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
 
 
       <div className="grid lg:grid-cols-2 gap-8">
-        <ListCard title={t('advisory_practices_title')} items={key_practices_for_success} icon={<CheckCircleIcon />} itemClassName="text-green-800 bg-green-50 dark:bg-green-900/50 dark:text-green-200" />
-        <ListCard title={t('advisory_warnings_title')} items={warnings_and_constraints} icon={<WarningIcon />} itemClassName="text-red-800 bg-red-50 dark:bg-red-900/50 dark:text-red-200" />
+        <ListCard title={t('advisory_practices_title')} items={advisory?.key_practices_for_success ?? []} icon={<CheckCircleIcon />} itemClassName="text-green-800 bg-green-50 dark:bg-green-900/50 dark:text-green-200" />
+        <ListCard title={t('advisory_warnings_title')} items={advisory?.warnings_and_constraints ?? []} icon={<WarningIcon />} itemClassName="text-red-800 bg-red-50 dark:bg-red-900/50 dark:text-red-200" />
       </div>
 
        <SectionCard title={t('advisory_marketplaces_title')} icon={<MarketIcon />}>
           <div className="space-y-4">
-             {recommended_marketplaces.map((market, index) => (
+             {advisory?.recommended_marketplaces?.map((market, index) => (
                <div key={index} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border dark:border-gray-600">
                  <h4 className="font-bold text-brand-text-primary dark:text-gray-200">{market.name} <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">({market.type} - {market.region})</span></h4>
                  <p className="text-sm text-brand-text-secondary dark:text-gray-300">{market.why_suitable}</p>
@@ -449,7 +432,7 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
           </div>
       </SectionCard>
 
-      <ListCard title={t('advisory_assumptions_title')} items={data_gaps_and_assumptions} icon={<BookIcon />} itemClassName="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50" />
+      <ListCard title={t('advisory_assumptions_title')} items={advisory?.data_gaps_and_assumptions ?? []} icon={<BookIcon />} itemClassName="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50" />
       
       {sources.length > 0 && (
         <SectionCard title={t('advisory_sources_title')} icon={<GlobeIcon />}>

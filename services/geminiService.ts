@@ -83,6 +83,11 @@ export async function generateCropAdvisory(userInput: UserInput, locale: Locale,
     The user's preferred language is ${languageName}.
     **CRITICAL REQUIREMENT:** The entire JSON response you provide, including all string values for descriptions, notes, assumptions, and reasons, MUST be written exclusively in the ${languageName} language. Do not use any English text in the JSON values. The JSON keys themselves must remain in English as defined by the schema.
 
+    **JSON Formatting Rules:**
+    - Ensure the final output is a single, valid JSON object that strictly adheres to the provided schema.
+    - **Crucially, if any string value within the JSON contains double quotes ("), they MUST be properly escaped with a backslash (\\"). For example, instead of "saying "hello"", write "saying \\"hello\\"". This is critical to prevent parsing errors.**
+    - Do not include any text, explanations, or markdown fences (like \`\`\`json) before or after the JSON object.
+
     User Data:
     - Land Size: ${landSize}
     - Location: ${location}
@@ -138,12 +143,15 @@ export async function generateCropAdvisory(userInput: UserInput, locale: Locale,
       config: config,
     });
 
-    const jsonText = response.text;
+    let jsonText = response.text;
     
     if (!jsonText) {
       throw new Error("The AI model returned an empty response.");
     }
     
+    // Clean the response text: remove markdown fences and trim whitespace.
+    jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+
     const advisory: CropAdvisory = JSON.parse(jsonText);
     return { advisory, sources };
 
