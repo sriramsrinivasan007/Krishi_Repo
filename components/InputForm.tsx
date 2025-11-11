@@ -5,7 +5,7 @@ import { MapPinIcon, MicrophoneIcon } from './IconComponents';
 
 const LocationPicker = lazy(() => import('./LocationPicker'));
 
-type VoiceField = keyof Omit<UserInput, 'location' | 'landSize'> | 'landSize';
+type VoiceField = keyof Omit<UserInput, 'location'>;
 
 interface InputFormProps {
   onGenerate: (data: UserInput, enableThinking: boolean, coordinates: Coordinates | null) => void;
@@ -18,8 +18,7 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
     location: 'Fetching location...',
     soilType: 'Alluvial',
     irrigation: 'Drip Irrigation',
-    previousCrop: 'Cotton',
-    interestedCrops: '',
+    phoneNumber: '',
   });
   const [enableThinking, setEnableThinking] = useState(false);
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
@@ -143,7 +142,7 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.landSize || !formData.location || !formData.soilType || !formData.irrigation) {
+    if (!formData.landSize || !formData.location || !formData.soilType || !formData.irrigation || !formData.phoneNumber) {
       setError(t('error_all_fields_required'));
       return;
     }
@@ -253,66 +252,6 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
           </div>
 
           <div>
-            <label htmlFor="previousCrop" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
-              {t('form_previous_crop')}
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                name="previousCrop"
-                id="previousCrop"
-                value={formData.previousCrop}
-                onChange={handleChange}
-                className="w-full px-4 py-2 pr-10 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary-light dark:focus:ring-green-500 focus:border-transparent transition duration-300"
-                placeholder={t('form_previous_crop_placeholder')}
-              />
-              <button
-                  type="button"
-                  onClick={() => handleToggleVoiceInput('previousCrop')}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-brand-primary transition-colors"
-                  aria-label={t('voice_start_prompt_previous_crop')}
-              >
-                  <MicrophoneIcon className={`w-5 h-5 ${recordingField === 'previousCrop' ? 'text-red-500 animate-pulse' : ''}`} />
-              </button>
-            </div>
-            {recordingField === 'previousCrop' && (
-              <p className="text-sm text-brand-primary dark:text-green-400 mt-1">
-                {interimTranscript || t('voice_listening')}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="interestedCrops" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
-              {t('form_interested_crops')}
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                name="interestedCrops"
-                id="interestedCrops"
-                value={formData.interestedCrops}
-                onChange={handleChange}
-                className="w-full px-4 py-2 pr-10 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary-light dark:focus:ring-green-500 focus:border-transparent transition duration-300"
-                placeholder={t('form_interested_crops_placeholder')}
-              />
-              <button
-                  type="button"
-                  onClick={() => handleToggleVoiceInput('interestedCrops')}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-brand-primary transition-colors"
-                  aria-label={t('voice_start_prompt_interested_crops')}
-              >
-                  <MicrophoneIcon className={`w-5 h-5 ${recordingField === 'interestedCrops' ? 'text-red-500 animate-pulse' : ''}`} />
-              </button>
-            </div>
-            {recordingField === 'interestedCrops' && (
-              <p className="text-sm text-brand-primary dark:text-green-400 mt-1">
-                {interimTranscript || t('voice_listening')}
-              </p>
-            )}
-          </div>
-
-          <div>
             <label htmlFor="irrigation" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
               {t('form_irrigation')}
             </label>
@@ -341,6 +280,38 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
                 {interimTranscript || t('voice_listening')}
               </p>
             )}
+          </div>
+
+          <div>
+            <label htmlFor="phoneNumber" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
+              {t('form_phone_number')}
+            </label>
+            <div className="relative">
+              <input
+                type="tel"
+                name="phoneNumber"
+                id="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                className="w-full px-4 py-2 pr-10 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary-light dark:focus:ring-green-500 focus:border-transparent transition duration-300"
+                placeholder={t('form_phone_number_placeholder')}
+                required
+              />
+              <button
+                  type="button"
+                  onClick={() => handleToggleVoiceInput('phoneNumber')}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-brand-primary transition-colors"
+                  aria-label={t('voice_start_prompt_phone_number')}
+              >
+                  <MicrophoneIcon className={`w-5 h-5 ${recordingField === 'phoneNumber' ? 'text-red-500 animate-pulse' : ''}`} />
+              </button>
+            </div>
+             {recordingField === 'phoneNumber' && (
+              <p className="text-sm text-brand-primary dark:text-green-400 mt-1">
+                {interimTranscript || t('voice_listening')}
+              </p>
+            )}
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('form_phone_number_desc')}</p>
           </div>
           
           {voiceError && <p className="text-sm text-red-600 dark:text-red-400">{voiceError}</p>}

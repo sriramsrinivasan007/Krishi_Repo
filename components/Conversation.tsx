@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { GoogleGenAI, Modality, LiveServerMessage, LiveSession } from '@google/genai';
+// FIX: Removed `LiveSession` as it is not an exported member of the library.
+import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
 import { useTranslation } from '../hooks/useTranslation';
 import { FarmerIcon, MicrophoneIcon, StopCircleIcon } from './IconComponents';
 import { createBlob, decode, decodeAudioData } from '../utils/audioUtils';
@@ -10,7 +11,11 @@ type TranscriptEntry = {
     text: string;
 };
 
-const Conversation: React.FC = () => {
+interface ConversationProps {
+    onApiError: () => void;
+}
+
+const Conversation: React.FC<ConversationProps> = ({ onApiError }) => {
     const { t, locale } = useTranslation();
 
     const [status, setStatus] = useState<'idle' | 'connecting' | 'active' | 'error'>('idle');
@@ -27,7 +32,8 @@ const Conversation: React.FC = () => {
     const [currentInput, setCurrentInput] = useState('');
     const [currentOutput, setCurrentOutput] = useState('');
 
-    const sessionPromiseRef = useRef<Promise<LiveSession> | null>(null);
+    // FIX: Changed type from `Promise<LiveSession>` to `Promise<any>` because `LiveSession` is not an exported type.
+    const sessionPromiseRef = useRef<Promise<any> | null>(null);
     const inputAudioContextRef = useRef<AudioContext | null>(null);
     const outputAudioContextRef = useRef<AudioContext | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
@@ -48,8 +54,8 @@ const Conversation: React.FC = () => {
         scriptProcessorRef.current?.disconnect();
         mediaStreamSourceRef.current?.disconnect();
         streamRef.current?.getTracks().forEach(track => track.stop());
-        inputAudioContextRef.current?.close();
-        outputAudioContextRef.current?.close();
+        inputAudioContextRef.current?.close().catch(console.error);
+        outputAudioContextRef.current?.close().catch(console.error);
 
         scriptProcessorRef.current = null;
         mediaStreamSourceRef.current = null;
@@ -82,7 +88,6 @@ const Conversation: React.FC = () => {
     const startConversation = async () => {
         setStatus('connecting');
         setError(null);
-        setTranscriptHistory([]);
         setCurrentInput('');
         setCurrentOutput('');
 
@@ -90,7 +95,6 @@ const Conversation: React.FC = () => {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-            // FIX: Handle vendor-prefixed webkitAudioContext for broader browser support.
             const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
             inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
             outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
@@ -101,7 +105,7 @@ const Conversation: React.FC = () => {
             const voiceName = voiceMap[locale] || 'Zephyr';
 
             sessionPromiseRef.current = ai.live.connect({
-                model: 'gemini-2.5-flash-lite',
+                model: 'gemini-2.5-flash-native-audio-preview-09-2025',
                 callbacks: {
                     onopen: () => {
                         console.log('Session opened.');
@@ -130,8 +134,8 @@ const Conversation: React.FC = () => {
                         }
 
                         if (message.serverContent?.turnComplete) {
-                            const finalInput = currentInput.replace(/<[^>]+>/g, '').trim();
-                            const finalOutput = currentOutput.replace(/<[^>]+>/g, '').trim();
+                            const finalInput = currentInput.trim();
+                            const finalOutput = currentOutput.trim();
                             if (finalInput || finalOutput) {
                                 setTranscriptHistory(prev => [...prev, { speaker: 'user', text: finalInput }, { speaker: 'model', text: finalOutput }]);
                             }
@@ -166,6 +170,7 @@ const Conversation: React.FC = () => {
                     onerror: (e: ErrorEvent) => {
                         console.error('Session error:', e);
                         setError(t('conversation_error_api'));
+                        onApiError();
                         setStatus('error');
                         cleanup();
                     },
@@ -186,10 +191,15 @@ const Conversation: React.FC = () => {
 
         } catch (err) {
             console.error("Failed to start conversation:", err);
-            if (err instanceof DOMException && err.name === "NotAllowedError") {
+            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+
+            if (errorMessage.includes("API Key") || errorMessage.includes("Requested entity was not found")) {
+                setError(t('conversation_error_api'));
+                onApiError();
+            } else if (err instanceof DOMException && err.name === "NotAllowedError") {
                  setError(t('conversation_error_mic'));
             } else {
-                 setError(err instanceof Error ? err.message : t('error_unknown'));
+                 setError(errorMessage);
             }
             setStatus('error');
             cleanup();
@@ -199,7 +209,6 @@ const Conversation: React.FC = () => {
     const renderStatus = () => {
         if (status === 'active') {
             if (currentOutput.length > 0) return t('conversation_ai_speaking');
-            if (currentInput.length > 0) return t('conversation_listening');
             return t('conversation_listening');
         }
         if (status === 'connecting') return t('conversation_connecting');
@@ -225,14 +234,14 @@ const Conversation: React.FC = () => {
                  {currentInput && (
                     <div className="flex justify-end">
                         <div className="p-3 rounded-xl max-w-lg bg-green-50 text-green-700 dark:bg-green-900/70 dark:text-green-300 italic">
-                             <p>{currentInput.replace(/<[^>]+>/g, '')}</p>
+                             <p>{currentInput}</p>
                         </div>
                     </div>
                  )}
                   {currentOutput && (
                     <div className="flex justify-start">
                          <div className="p-3 rounded-xl max-w-lg bg-gray-100 text-gray-600 dark:bg-gray-700/70 dark:text-gray-400 italic">
-                             <p>{currentOutput.replace(/<[^>]+>/g, '')}</p>
+                             <p>{currentOutput}</p>
                         </div>
                     </div>
                  )}

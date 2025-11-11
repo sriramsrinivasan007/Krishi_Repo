@@ -4,27 +4,18 @@ import { cropAdvisorySchema, weatherForecastSchema } from './schema';
 import { convertSchemaForGemini } from '../utils/schemaConverter';
 import { languages, voiceMap } from '../locales/translations';
 
-// Initialize the GoogleGenAI client once at the module level.
-// This shared instance will be used by all functions in this service.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 async function getGroundedContextAndSources(
+  ai: GoogleGenAI,
   location: string, 
-  coordinates: Coordinates | null,
-  interestedCrops?: string
+  coordinates: Coordinates | null
 ): Promise<{ context: string, sources: GroundingChunk[] }> {
   try {
-    const cropFocus = interestedCrops 
-        ? `The user is particularly interested in the following crops: ${interestedCrops}. Focus the market analysis on these if possible, in addition to other relevant crops for the region.`
-        : ``;
-
     const prompt = `
       Based on the location "${location}", provide a concise, up-to-date analysis of the agricultural market.
-      ${cropFocus}
       Focus on:
-      1.  Current market prices and recent price trends for various crops in this specific region. If the user specified crops of interest, prioritize them.
+      1.  Current market prices and recent price trends for various crops suitable for this specific region.
       2.  Local market demand for agricultural products.
-      3.  List key regional marketplaces (mandis) and their typical activity.
+      3.  List key regional marketplaces (mandis), their typical activity, and their contact phone numbers if publicly available.
       Cite specific news articles, government reports, or local market websites in your findings.
     `;
     
@@ -57,7 +48,8 @@ async function getGroundedContextAndSources(
 
   } catch (error) {
     console.error("Could not fetch grounded context:", error);
-    // Return a neutral statement if grounding fails, so the main process can continue.
+    // Re-throw to be caught by the caller.
+    if (error instanceof Error) throw error;
     return {
         context: "Could not retrieve real-time local market data.",
         sources: []
@@ -66,67 +58,61 @@ async function getGroundedContextAndSources(
 }
 
 export async function generateCropAdvisory(userInput: UserInput, locale: Locale, enableThinking: boolean, coordinates: Coordinates | null): Promise<AdvisoryResult> {
-  const { landSize, location, soilType, irrigation, previousCrop, interestedCrops } = userInput;
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const { landSize, location, soilType, irrigation, phoneNumber } = userInput;
   const languageName = languages.find(lang => lang.code === locale)?.name || 'English';
 
-  // Step 1: Get grounded, local context from Search and Maps APIs using the shared AI instance.
-  const { context: groundedContext, sources } = await getGroundedContextAndSources(location, coordinates, interestedCrops);
-
-  // Step 2: Use the grounded context to generate the structured advisory.
-  const userInterestContext = interestedCrops
-    ? `The user has expressed specific interest in these crops: ${interestedCrops}. While your primary goal is to recommend the MOST suitable crop based on all factors, consider their interest. If one of their preferred crops is a viable (though perhaps not optimal) option, you can recommend it, but you MUST clearly justify why it's a good choice and also mention any better alternatives in the 'warnings_and_constraints' section.`
-    : ``;
-
-  const prompt = `
-    You are an expert agricultural advisor and environmental scientist specializing in sustainable farming for specific global regions.
-    Your primary goal is to provide a crop recommendation that is **environmentally sustainable** and **economically viable** for the user's specific location and resources.
-    The user's preferred language is ${languageName}.
-    **CRITICAL REQUIREMENT:** The entire JSON response you provide, including all string values for descriptions, notes, assumptions, and reasons, MUST be written exclusively in the ${languageName} language. Do not use any English text in the JSON values. The JSON keys themselves must remain in English as defined by the schema.
-
-    **JSON Formatting Rules:**
-    - Ensure the final output is a single, valid JSON object that strictly adheres to the provided schema.
-    - **Crucially, if any string value within the JSON contains double quotes ("), they MUST be properly escaped with a backslash (\\"). For example, instead of "saying "hello"", write "saying \\"hello\\"". This is critical to prevent parsing errors.**
-    - Do not include any text, explanations, or markdown fences (like \`\`\`json) before or after the JSON object.
-
-    User Data:
-    - Land Size: ${landSize}
-    - Location: ${location}
-    - Soil Type: ${soilType}
-    - Primary Irrigation Source: ${irrigation}
-    - Previous Crop Harvested: ${previousCrop || 'Not specified'}
-    - Crops of Interest: ${interestedCrops || 'Not specified'}
-
-    Real-time Local Context (from Google Search and Maps):
-    ---
-    ${groundedContext}
-    ---
-
-    **User's Crop Preference:**
-    ${userInterestContext}
-
-    **Decision-Making Hierarchy & Key Instructions:**
-
-    1.  **Water & Climate First (Most Important):** Your analysis MUST begin with the user's Location (${location}) and Irrigation Source (${irrigation}). A recommendation is only valid if the crop's water needs can be realistically met by the specified irrigation method within that region's climate. **This rule overrides the user's preference if their interested crops are unsuitable.**
-    
-    2.  **Strict Irrigation & Climate Matching:**
-        - If the irrigation is 'Rain-fed' in an arid or semi-arid region (e.g., Saudi Arabia, Rajasthan in India), you MUST recommend only highly drought-tolerant crops like millets, sorghum, date palms, or specific legumes. Do NOT suggest water-intensive vegetables or grains, even if the user expressed interest in them.
-        - If you recommend a water-intensive crop (like Pumpkin, Tomato, Sugarcane, Rice), you MUST explicitly justify this in the \`why.soil_suitability\` or \`why.crop_rotation\` field by stating that it is **only possible due to the user's specified advanced irrigation method** (e.g., 'Drip Irrigation', 'Canal Water'). This justification is mandatory.
-
-    3.  **Economic Viability (Secondary):** After ensuring environmental suitability, use the "Real-time Local Context" to make all financial projections realistic. Ground your estimates for 'farm_gate_price' and 'market_demand' in the provided data.
-    
-    4.  **Conservative Projections:** Do not always assume a profit. If market prices are low or input costs are high for the region, your 'net_profit_for_user_land' must reflect a potential loss.
-    
-    5.  **Financials & Units:** All financial calculations must be in Indian Rupees (INR) and based on the user's land size (${landSize}). Correctly interpret common area units (e.g., acres, hectares, bigha).
-
-    6.  **Crop Naming:** The 'suggested_crop_for_cultivation' MUST be the common name of the crop, correctly translated into ${languageName}. For example, for 'Cotton' in Telugu, use 'పత్తి', not a transliteration.
-
-    7.  **Detailed Plans:** Provide comprehensive pest/disease management and fertilizer schedules as requested by the schema.
-    
-    8.  **Soil Health Analysis:** Based on the user's 'Soil Type' (${soilType}), generate a detailed analysis. Provide specific, actionable recommendations for improvement. For each recommendation ('practice', 'benefit', 'how_to'), ensure the 'how_to' is a step-by-step list of strings.
-  `;
-
   try {
+    // Step 1: Get grounded, local context from Search and Maps APIs using the shared AI instance.
+    const { context: groundedContext, sources } = await getGroundedContextAndSources(ai, location, coordinates);
+
+    // Step 2: Use the grounded context to generate the structured advisory.
+    const prompt = `
+      You are an expert agricultural advisor and environmental scientist specializing in sustainable farming for specific global regions.
+      Your primary goal is to provide a crop recommendation that is **environmentally sustainable** and **economically viable** for the user's specific location and resources.
+      The user's preferred language is ${languageName}.
+      **CRITICAL REQUIREMENT:** The entire JSON response you provide, including all string values for descriptions, notes, assumptions, and reasons, MUST be written exclusively in the ${languageName} language. Do not use any English text in the JSON values. The JSON keys themselves must remain in English as defined by the schema.
+
+      **JSON Formatting Rules:**
+      - Ensure the final output is a single, valid JSON object that strictly adheres to the provided schema.
+      - **Crucially, if any string value within the JSON contains double quotes ("), they MUST be properly escaped with a backslash (\\"). For example, instead of "saying "hello"", write "saying \\"hello\\"". This is critical to prevent parsing errors.**
+      - Do not include any text, explanations, or markdown fences (like \`\`\`json) before or after the JSON object.
+
+      User Data:
+      - Land Size: ${landSize}
+      - Location: ${location}
+      - Soil Type: ${soilType}
+      - Primary Irrigation Source: ${irrigation}
+      - User Phone Number for Alerts: ${phoneNumber}
+
+      Real-time Local Context (from Google Search and Maps):
+      ---
+      ${groundedContext}
+      ---
+
+      **Decision-Making Hierarchy & Key Instructions:**
+
+      1.  **Water & Climate First (Most Important):** Your analysis MUST begin with the user's Location (${location}) and Irrigation Source (${irrigation}). A recommendation is only valid if the crop's water needs can be realistically met by the specified irrigation method within that region's climate.
+      
+      2.  **Strict Irrigation & Climate Matching:**
+          - If the irrigation is 'Rain-fed' in an arid or semi-arid region (e.g., Saudi Arabia, Rajasthan in India), you MUST recommend only highly drought-tolerant crops like millets, sorghum, date palms, or specific legumes. Do NOT suggest water-intensive vegetables or grains.
+          - If you recommend a water-intensive crop (like Pumpkin, Tomato, Sugarcane, Rice), you MUST explicitly justify this in the \`why.soil_suitability\` or \`why.crop_rotation\` field by stating that it is **only possible due to the user's specified advanced irrigation method** (e.g., 'Drip Irrigation', 'Canal Water'). This justification is mandatory.
+
+      3.  **Economic Viability (Secondary):** After ensuring environmental suitability, use the "Real-time Local Context" to make all financial projections realistic. Ground your estimates for 'farm_gate_price' and 'market_demand' in the provided data.
+      
+      4.  **Conservative Projections:** Do not always assume a profit. If market prices are low or input costs are high for the region, your 'net_profit_for_user_land' must reflect a potential loss.
+      
+      5.  **Financials & Units:** All financial calculations must be in Indian Rupees (INR) and based on the user's land size (${landSize}). Correctly interpret common area units (e.g., acres, hectares, bigha).
+
+      6.  **Crop Naming:** The 'suggested_crop_for_cultivation' MUST be the common name of the crop, correctly translated into ${languageName}. For example, for 'Cotton' in Telugu, use 'పత్తి', not a transliteration.
+
+      7.  **Detailed Plans:** Provide comprehensive pest/disease management, fertilizer schedules, and recommended marketplaces. For each marketplace, you MUST include a contact phone number if it is publicly available. If a phone number cannot be found, omit the field or leave it empty.
+      
+      8.  **Soil Health Analysis:** Based on the user's 'Soil Type' (${soilType}), generate a detailed analysis. Provide specific, actionable recommendations for improvement. For each recommendation ('practice', 'benefit', 'how_to'), ensure the 'how_to' is a step-by-step list of strings.
+    `;
+
     const geminiSchema = convertSchemaForGemini(cropAdvisorySchema.schema);
+    const modelName = enableThinking ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
     
     const config: any = {
         responseMimeType: "application/json",
@@ -138,7 +124,7 @@ export async function generateCropAdvisory(userInput: UserInput, locale: Locale,
     }
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-pro',
+      model: modelName,
       contents: prompt,
       config: config,
     });
@@ -161,12 +147,14 @@ export async function generateCropAdvisory(userInput: UserInput, locale: Locale,
     if (error instanceof SyntaxError) {
       throw new Error("Failed to parse the AI model's response as JSON. The model may have returned an invalid format.");
     }
-    throw new Error("Failed to generate crop advisory from the AI model.");
+    // Re-throw other errors to be handled by the UI
+    throw error;
   }
 }
 
 
 export async function generateSpeech(text: string, locale: Locale): Promise<string> {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const voiceName = voiceMap[locale] || 'Kore';
         const response = await ai.models.generateContent({
@@ -189,11 +177,12 @@ export async function generateSpeech(text: string, locale: Locale): Promise<stri
         return base64Audio;
     } catch (error) {
         console.error("Error generating speech:", error);
-        throw new Error("Failed to generate audio from text.");
+        throw error;
     }
 }
 
 export async function getWeatherForecast(location: string, locale: Locale): Promise<WeatherForecast> {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const languageName = languages.find(lang => lang.code === locale)?.name || 'English';
     const prompt = `
         Act as a weather API. Provide the current weather and a realistic, 5-day forecast for the location: "${location}".
@@ -230,6 +219,6 @@ export async function getWeatherForecast(location: string, locale: Locale): Prom
         return JSON.parse(jsonText);
     } catch (error) {
         console.error("Error fetching weather forecast:", error);
-        throw new Error("Failed to generate weather forecast from the AI model.");
+        throw error;
     }
 }

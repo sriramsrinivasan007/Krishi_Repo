@@ -18,20 +18,21 @@ export interface UserInput {
   location: string;
   soilType: string;
   irrigation: string;
-  previousCrop?: string;
-  interestedCrops?: string;
+  phoneNumber: string;
 }
 
 export type Locale = 'en' | 'hi' | 'kn' | 'te' | 'ta' | 'ml';
 
+// FIX: Made uri and title optional to match the GroundingChunk type from the @google/genai SDK.
 interface WebChunk {
-  uri: string;
-  title: string;
+  uri?: string;
+  title?: string;
 }
 
+// FIX: Made uri and title optional to match the GroundingChunk type from the @google/genai SDK.
 interface MapsChunk {
-  uri: string;
-  title: string;
+  uri?: string;
+  title?: string;
 }
 
 export interface GroundingChunk {
@@ -128,6 +129,7 @@ export interface CropAdvisory {
     type: string;
     region: string;
     why_suitable: string;
+    phone_number?: string;
   }>;
   key_practices_for_success: string[];
   warnings_and_constraints: string[];
@@ -157,4 +159,13 @@ export interface DailyForecast {
 export interface WeatherForecast {
   current: CurrentWeather;
   daily: DailyForecast[];
+}
+
+// Feedback Feature Types
+export interface Feedback {
+  advisoryCrop: string;
+  userInput: UserInput;
+  rating: number;
+  comments: string;
+  submittedAt: string;
 }

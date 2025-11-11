@@ -1,13 +1,15 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import type { CropAdvisory, GroundingChunk, WeatherForecast, UserInput } from '../types';
+import type { CropAdvisory, GroundingChunk, WeatherForecast, UserInput, Feedback } from '../types';
 import { InfoCard, SectionCard, ListCard } from './CardComponents';
-import { CalendarIcon, DropletIcon, CheckCircleIcon, WarningIcon, MarketIcon, BookIcon, DollarSignIcon, SpeakerWaveIcon, GlobeIcon, BugIcon, NutrientIcon, ThermometerIcon, SoilIcon } from './IconComponents';
+import { BellIcon, CalendarIcon, DropletIcon, CheckCircleIcon, WarningIcon, MarketIcon, BookIcon, DollarSignIcon, SpeakerWaveIcon, GlobeIcon, BugIcon, NutrientIcon, ThermometerIcon, SoilIcon, StarIcon } from './IconComponents';
 import { useTranslation } from '../hooks/useTranslation';
 import { generateSpeech, getWeatherForecast } from '../services/geminiService';
+import { saveFeedback } from '../services/feedbackService';
 import { decode, decodeAudioData } from '../utils/audioUtils';
 import { useTheme } from '../context/ThemeContext';
 import LoadingSpinner from './LoadingSpinner';
+import FeedbackForm from './FeedbackForm';
 
 const WeatherDisplay = lazy(() => import('./WeatherDisplay'));
 
@@ -27,18 +29,19 @@ const currencyFormatter = new Intl.NumberFormat('en-IN', {
 
 const parseRangeToAvg = (rangeStr: string): number => {
     if (!rangeStr) return 0;
-    // Updated regex to handle potential negative signs
-    const numbers = rangeStr.replace(/[₹,A-Za-z]/g, '').split('-').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
-    if (numbers.length === 0) return 0;
-    if (numbers.length === 1) return numbers[0];
+    // Use a robust regex to find all numbers, including negative and comma-separated ones.
+    const numberMatches = rangeStr.match(/-?[\d,.]+/g);
+    if (!numberMatches) return 0;
 
-    // Handle ranges like "-10000 - 5000"
-    if (numbers.length > 2) {
-      if (rangeStr.trim().startsWith('-')) {
-        return (-numbers[0] + numbers[1]) / 2;
-      }
-    }
-    return (numbers[0] + numbers[1]) / 2;
+    const parsedNumbers = numberMatches
+        .map(s => parseFloat(s.replace(/,/g, '')))
+        .filter(n => !isNaN(n));
+
+    if (parsedNumbers.length === 0) return 0;
+    if (parsedNumbers.length === 1) return parsedNumbers[0];
+
+    // Return the average of all found numbers (typically the start and end of a range)
+    return parsedNumbers.reduce((acc, val) => acc + val, 0) / parsedNumbers.length;
 };
 
 
@@ -119,6 +122,9 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
   const [speechError, setSpeechError] = useState<string | null>(null);
   const [audioData, setAudioData] = useState<string | null>(null);
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(true);
+  const [isFeedbackSubmitted, setIsFeedbackSubmitted] = useState(false);
+  const [isFeedbackSubmitting, setIsFeedbackSubmitting] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
   
   const { location } = userInput;
 
@@ -201,6 +207,26 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
         setIsSpeaking(false);
     }
   };
+
+  const handleFeedbackSubmit = async (rating: number, comments: string) => {
+    setIsFeedbackSubmitting(true);
+    setFeedbackError(null);
+    const feedbackData: Feedback = {
+      advisoryCrop: advisory.suggested_crop_for_cultivation,
+      userInput,
+      rating,
+      comments,
+      submittedAt: new Date().toISOString(),
+    };
+    try {
+        await saveFeedback(feedbackData);
+        setIsFeedbackSubmitted(true);
+    } catch (err) {
+        setFeedbackError(err instanceof Error ? err.message : 'An unknown error occurred while submitting feedback.');
+    } finally {
+        setIsFeedbackSubmitting(false);
+    }
+  };
   
   const getButtonText = () => {
       if (isAudioLoading) return t('tts_preparing');
@@ -251,6 +277,18 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
             {speechError && <p className="text-sm text-red-200 mt-2">{speechError}</p>}
         </div>
       </div>
+
+      {userInput.phoneNumber && (
+        <div className="p-4 bg-blue-100 dark:bg-blue-900/50 border border-blue-300 dark:border-blue-600 rounded-lg flex items-center space-x-4">
+            <div className="w-8 h-8 text-blue-600 dark:text-blue-300 flex-shrink-0">
+                <BellIcon />
+            </div>
+            <div>
+                <h3 className="font-semibold text-blue-800 dark:text-blue-200">{t('alerts_enabled_title')}</h3>
+                <p className="text-sm text-blue-700 dark:text-blue-300">{t('alerts_enabled_desc', { phone: userInput.phoneNumber })}</p>
+            </div>
+        </div>
+      )}
 
       <SectionCard title={t('advisory_why_title')} icon={<CheckCircleIcon />}>
         <div className="grid md:grid-cols-3 gap-6">
@@ -425,8 +463,17 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
           <div className="space-y-4">
              {advisory?.recommended_marketplaces?.map((market, index) => (
                <div key={index} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border dark:border-gray-600">
-                 <h4 className="font-bold text-brand-text-primary dark:text-gray-200">{market.name} <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">({market.type} - {market.region})</span></h4>
-                 <p className="text-sm text-brand-text-secondary dark:text-gray-300">{market.why_suitable}</p>
+                 <div className="flex justify-between items-start">
+                    <div>
+                        <h4 className="font-bold text-brand-text-primary dark:text-gray-200">{market.name} <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">({market.type} - {market.region})</span></h4>
+                        <p className="text-sm text-brand-text-secondary dark:text-gray-300">{market.why_suitable}</p>
+                    </div>
+                    {market.phone_number && (
+                        <a href={`tel:${market.phone_number}`} className="ml-4 flex-shrink-0 px-4 py-2 bg-brand-primary text-white text-sm font-semibold rounded-lg hover:bg-brand-primary-light transition-colors">
+                            {t('market_phone')}
+                        </a>
+                    )}
+                 </div>
                </div>
              ))}
           </div>
@@ -434,6 +481,24 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
 
       <ListCard title={t('advisory_assumptions_title')} items={advisory?.data_gaps_and_assumptions ?? []} icon={<BookIcon />} itemClassName="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50" />
       
+      <SectionCard title={t('feedback_title')} icon={<StarIcon />}>
+        {isFeedbackSubmitted ? (
+            <div className="text-center py-8">
+                <div className="w-16 h-16 mx-auto text-green-500">
+                    <CheckCircleIcon />
+                </div>
+                <h3 className="text-2xl font-bold text-brand-text-primary dark:text-gray-100 mt-4">{t('feedback_thanks_title')}</h3>
+                <p className="text-brand-text-secondary dark:text-gray-400 mt-2">{t('feedback_thanks_desc')}</p>
+            </div>
+        ) : (
+            <>
+                <p className="text-brand-text-secondary dark:text-gray-400 -mt-2 mb-4 text-sm">{t('feedback_subtitle')}</p>
+                <FeedbackForm onSubmit={handleFeedbackSubmit} isSubmitting={isFeedbackSubmitting} />
+                {feedbackError && <p className="text-red-500 dark:text-red-400 text-sm mt-2 text-center">{feedbackError}</p>}
+            </>
+        )}
+      </SectionCard>
+
       {sources.length > 0 && (
         <SectionCard title={t('advisory_sources_title')} icon={<GlobeIcon />}>
             <p className="text-brand-text-secondary dark:text-gray-400 mb-4 -mt-2 text-sm">
@@ -451,7 +516,8 @@ const AdvisoryDisplay: React.FC<AdvisoryDisplayProps> = ({ advisory, sources, on
                             rel="noopener noreferrer"
                             className="block p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
                         >
-                            <p className="font-semibold text-brand-primary dark:text-green-400 group-hover:underline truncate">{chunk.title}</p>
+                            {/* FIX: Use uri as a fallback for the title, as title can be optional. */}
+                            <p className="font-semibold text-brand-primary dark:text-green-400 group-hover:underline truncate">{chunk.title || chunk.uri}</p>
                             <p className="text-sm text-brand-text-secondary dark:text-gray-400 truncate">{chunk.uri}</p>
                         </a>
                     );

@@ -143,7 +143,8 @@ export const cropAdvisorySchema = {
             "name": { "type": "string" },
             "type": { "type": "string" },
             "region": { "type": "string" },
-            "why_suitable": { "type": "string" }
+            "why_suitable": { "type": "string" },
+            "phone_number": { "type": "string", "description": "The contact phone number for the marketplace, if available." }
           }
         }
       },
