@@ -12,10 +12,10 @@ type TranscriptEntry = {
 };
 
 interface ConversationProps {
-    onApiError: () => void;
+    // onApiError prop removed
 }
 
-const Conversation: React.FC<ConversationProps> = ({ onApiError }) => {
+const Conversation: React.FC<ConversationProps> = () => {
     const { t, locale } = useTranslation();
 
     const [status, setStatus] = useState<'idle' | 'connecting' | 'active' | 'error'>('idle');
@@ -170,7 +170,6 @@ const Conversation: React.FC<ConversationProps> = ({ onApiError }) => {
                     onerror: (e: ErrorEvent) => {
                         console.error('Session error:', e);
                         setError(t('conversation_error_api'));
-                        onApiError();
                         setStatus('error');
                         cleanup();
                     },
@@ -195,7 +194,6 @@ const Conversation: React.FC<ConversationProps> = ({ onApiError }) => {
 
             if (errorMessage.includes("API Key") || errorMessage.includes("Requested entity was not found")) {
                 setError(t('conversation_error_api'));
-                onApiError();
             } else if (err instanceof DOMException && err.name === "NotAllowedError") {
                  setError(t('conversation_error_mic'));
             } else {

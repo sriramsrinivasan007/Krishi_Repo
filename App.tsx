@@ -26,7 +26,6 @@ const App: React.FC = () => {
   const [view, setView] = useState<View>('advisory');
   const [lastInput, setLastInput] = useState<{userInput: UserInput, coordinates: Coordinates | null} | null>(null);
   const { t, locale } = useTranslation();
-  const [isKeyReady, setIsKeyReady] = useState<boolean>(false);
   const [toast, setToast] = useState<Toast | null>(null);
 
   // Effect to auto-hide the toast notification
@@ -39,23 +38,8 @@ const App: React.FC = () => {
     }
   }, [toast]);
 
-  useEffect(() => {
-    const checkApiKey = async () => {
-        if (window.aistudio && await window.aistudio.hasSelectedApiKey()) {
-            setIsKeyReady(true);
-        }
-    };
-    if (currentUser) {
-        checkApiKey();
-    }
-  }, [currentUser]);
-
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
-  };
-  
-  const resetApiKeyStatus = () => {
-      setIsKeyReady(false);
   };
 
   const handleGenerateAdvisory = useCallback(async (userInput: UserInput, enableThinking: boolean, coordinates: Coordinates | null) => {
@@ -83,8 +67,7 @@ const App: React.FC = () => {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
       if (errorMessage.includes("API Key") || errorMessage.includes("Requested entity was not found.")) {
-          setError("Your API Key seems to be invalid. Please select a valid key to continue.");
-          resetApiKeyStatus();
+          setError(t('error_api_key_invalid'));
       } else {
           setError(errorMessage);
       }
@@ -105,15 +88,6 @@ const App: React.FC = () => {
     setError(null);
     setLastInput(null);
     setView('advisory');
-    setIsKeyReady(false);
-  };
-
-  const handleSelectKey = async () => {
-      if (window.aistudio) {
-          await window.aistudio.openSelectKey();
-          // Assume success to avoid race conditions.
-          setIsKeyReady(true);
-      }
   };
 
   if (!currentUser) {
@@ -149,36 +123,6 @@ const App: React.FC = () => {
         </div>
       </footer>
   );
-  
-  if (!isKeyReady) {
-      return (
-          <div className="min-h-screen bg-brand-background dark:bg-gray-900 text-brand-text-primary dark:text-gray-200 font-sans flex flex-col transition-colors duration-300">
-              <Header />
-              <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-grow flex items-center justify-center">
-                  <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 max-w-lg">
-                      <h2 className="text-2xl font-bold text-brand-text-primary dark:text-gray-100 mb-4">{t('api_key_required_title')}</h2>
-                      <p className="text-brand-text-secondary dark:text-gray-400 mb-6">
-                          {t('api_key_required_desc')}
-                      </p>
-                      <button
-                          onClick={handleSelectKey}
-                          className="w-full bg-brand-primary-light text-white font-bold py-3 px-4 rounded-lg hover:bg-brand-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition duration-300 ease-in-out transform hover:scale-105"
-                      >
-                          {t('api_key_required_button')}
-                      </button>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
-                        {t('api_key_required_note_1')}
-                        <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="underline hover:text-brand-primary">
-                            {t('api_key_required_note_link')}
-                        </a>
-                        {t('api_key_required_note_2')}
-                      </p>
-                  </div>
-              </main>
-              <Footer />
-          </div>
-      );
-  }
 
   return (
     <div className="min-h-screen bg-brand-background dark:bg-gray-900 text-brand-text-primary dark:text-gray-200 font-sans flex flex-col transition-colors duration-300">
@@ -221,10 +165,10 @@ const App: React.FC = () => {
                     <h2 className="text-2xl font-bold mb-4">{t('error_title')}</h2>
                     <p className="mb-6">{error}</p>
                     <button
-                      onClick={isKeyReady ? handleReset : handleSelectKey}
+                      onClick={handleReset}
                       className="px-6 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition duration-300"
                     >
-                      {isKeyReady ? t('try_again') : 'Select Another Key'}
+                      {t('try_again')}
                     </button>
                   </div>
                 )}
@@ -241,7 +185,7 @@ const App: React.FC = () => {
             )}
 
             {view === 'conversation' && (
-                <Conversation onApiError={resetApiKeyStatus} />
+                <Conversation />
             )}
         </Suspense>
 
