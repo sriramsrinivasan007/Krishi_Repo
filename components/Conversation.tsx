@@ -6,6 +6,7 @@ import { FarmerIcon, MicrophoneIcon, StopCircleIcon } from './IconComponents';
 import { createBlob, decode, decodeAudioData } from '../utils/audioUtils';
 import { languages, voiceMap } from '../locales/translations';
 import { getAiClient } from '../utils/geminiClient';
+import ApiKeyErrorDisplay from './ApiKeyErrorDisplay';
 
 type TranscriptEntry = {
     speaker: 'user' | 'model';
@@ -267,7 +268,13 @@ const Conversation: React.FC<ConversationProps> = () => {
                         <span>{t('conversation_stop')}</span>
                     </button>
                 )}
-                {error && <p className="text-sm text-red-600 dark:text-red-400 text-center mt-2">{error}</p>}
+                {error && (
+                    error === t('error_api_key_missing')
+                    ? <div className="text-left text-sm mt-4 p-4 bg-red-100 dark:bg-red-900/30 rounded-lg border border-red-200 dark:border-red-600">
+                        <ApiKeyErrorDisplay smallText={true} />
+                      </div>
+                    : <p className="text-sm text-red-600 dark:text-red-400 text-center mt-2">{error}</p>
+                )}
             </div>
         </div>
     );

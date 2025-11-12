@@ -10,6 +10,7 @@ import { useTranslation } from './hooks/useTranslation';
 import ThemeToggle from './components/ThemeToggle';
 import { generateCropAdvisory } from './services/geminiService';
 import { sendSmsNotification } from './services/notificationService';
+import ApiKeyErrorDisplay from './components/ApiKeyErrorDisplay';
 
 // Lazy-load large components
 const AdvisoryDisplay = lazy(() => import('./components/AdvisoryDisplay'));
@@ -165,10 +166,14 @@ const App: React.FC = () => {
                 {error && (
                   <div className="text-center p-8 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 rounded-lg shadow-md">
                     <h2 className="text-2xl font-bold mb-4">{t('error_title')}</h2>
-                    <p className="mb-6">{error}</p>
+                    {error === t('error_api_key_missing') ? (
+                        <ApiKeyErrorDisplay />
+                    ) : (
+                        <p className="mb-6">{error}</p>
+                    )}
                     <button
                       onClick={handleReset}
-                      className="px-6 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition duration-300"
+                      className="mt-6 px-6 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition duration-300"
                     >
                       {t('try_again')}
                     </button>
