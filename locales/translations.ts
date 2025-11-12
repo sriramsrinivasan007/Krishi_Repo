@@ -61,7 +61,8 @@ export const translations: { [key in Locale]: { [key:string]: string } } = {
         signup_success: 'Registration successful! Please sign in.',
         error_email_password_required: 'Email and password are required.',
         error_unknown: 'An unknown error occurred.',
-        error_api_key_invalid: "Your API Key seems to be invalid. This can happen if the key is incorrect, has been revoked, or is not correctly exposed. Please double-check the `VITE_API_KEY` in your Vercel project settings and redeploy.",
+        // FIX: Updated environment variable name to API_KEY to align with guidelines.
+        error_api_key_invalid: "Your API Key seems to be invalid. This can happen if the key is incorrect, has been revoked, or is not correctly exposed. Please double-check the `API_KEY` in your Vercel project settings and redeploy.",
         // API Key Error - Structured Message
         error_api_key_missing: "API Key is missing or not configured for deployment.",
         error_api_key_missing_intro: "Your API Key could not be found. This is a common issue when deploying to services like Vercel. To fix this, please follow these steps:",
@@ -235,7 +236,8 @@ export const translations: { [key in Locale]: { [key:string]: string } } = {
         signup_success: 'पंजीकरण सफल! कृपया साइन इन करें।',
         error_email_password_required: 'ईमेल और पासवर्ड आवश्यक हैं।',
         error_unknown: 'एक अज्ञात त्रुटि हुई।',
-        error_api_key_invalid: "आपकी API कुंजी अमान्य लगती है। यह तब हो सकता है जब कुंजी गलत हो, रद्द कर दी गई हो, या सही ढंग से उजागर न हो। कृपया अपनी Vercel प्रोजेक्ट सेटिंग्स में `VITE_API_KEY` की दोबारा जांच करें और फिर से तैनात करें।",
+        // FIX: Updated environment variable name to API_KEY to align with guidelines.
+        error_api_key_invalid: "आपकी API कुंजी अमान्य लगती है। यह तब हो सकता है जब कुंजी गलत हो, रद्द कर दी गई हो, या सही ढंग से उजागर न हो। कृपया अपनी Vercel प्रोजेक्ट सेटिंग्स में `API_KEY` की दोबारा जांच करें और फिर से तैनात करें।",
         error_api_key_missing: "API कुंजी गायब है या परिनियोजन के लिए कॉन्फ़िगर नहीं है।",
         error_api_key_missing_intro: "आपकी API कुंजी नहीं मिल सकी। Vercel जैसी सेवाओं पर परिनियोजन करते समय यह एक आम समस्या है। इसे ठीक करने के लिए, कृपया इन चरणों का पालन करें:",
         error_api_key_step1_prefix: "अपने Vercel प्रोजेक्ट के",
@@ -401,7 +403,8 @@ export const translations: { [key in Locale]: { [key:string]: string } } = {
         signup_success: 'ನೋಂದಣಿ ಯಶಸ್ವಿಯಾಗಿದೆ! ದಯವಿಟ್ಟು ಸೈನ್ ಇನ್ ಮಾಡಿ.',
         error_email_password_required: 'ಇಮೇಲ್ ಮತ್ತು ಪಾಸ್ವರ್ಡ್ ಅಗತ್ಯವಿದೆ.',
         error_unknown: 'ಅಪರಿಚಿತ ದೋಷ ಸಂಭವಿಸಿದೆ.',
-        error_api_key_invalid: "ನಿಮ್ಮ API ಕೀ ಅಮಾನ್ಯವಾಗಿದೆ ಎಂದು ತೋರುತ್ತದೆ. ಕೀ ತಪ್ಪಾಗಿದ್ದರೆ, ಹಿಂತೆಗೆದುಕೊಂಡಿದ್ದರೆ, ಅಥವಾ ಸರಿಯಾಗಿ ಬಹಿರಂಗಪಡಿಸದಿದ್ದರೆ ಇದು ಸಂಭವಿಸಬಹುದು. ದಯವಿಟ್ಟು ನಿಮ್ಮ Vercel ಪ್ರಾಜೆಕ್ಟ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ `VITE_API_KEY` ಅನ್ನು ಎರಡು ಬಾರಿ ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಮರು-ನಿಯೋಜಿಸಿ.",
+        // FIX: Updated environment variable name to API_KEY to align with guidelines.
+        error_api_key_invalid: "ನಿಮ್ಮ API ಕೀ ಅಮಾನ್ಯವಾಗಿದೆ ಎಂದು ತೋರುತ್ತದೆ. ಕೀ ತಪ್ಪಾಗಿದ್ದರೆ, ಹಿಂತೆಗೆದುಕೊಂಡಿದ್ದರೆ, ಅಥವಾ ಸರಿಯಾಗಿ ಬಹಿರಂಗಪಡಿಸದಿದ್ದರೆ ಇದು ಸಂಭವಿಸಬಹುದು. ದಯವಿಟ್ಟು ನಿಮ್ಮ Vercel ಪ್ರಾಜೆಕ್ಟ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ `API_KEY` ಅನ್ನು ಎರಡು ಬಾರಿ ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಮರು-ನಿಯೋಜಿಸಿ.",
         error_api_key_missing: "API ಕೀ ಕಾಣೆಯಾಗಿದೆ ಅಥವಾ ನಿಯೋಜನೆಗಾಗಿ ಕಾನ್ಫಿಗರ್ ಮಾಡಲಾಗಿಲ್ಲ.",
         error_api_key_missing_intro: "ನಿಮ್ಮ API ಕೀಯನ್ನು ಕಂಡುಹಿಡಿಯಲಾಗಲಿಲ್ಲ। Vercel ನಂತಹ ಸೇವೆಗಳಿಗೆ ನಿಯೋಜಿಸುವಾಗ ಇದು ಸಾಮಾನ್ಯ ಸಮಸ್ಯೆಯಾಗಿದೆ। ಇದನ್ನು ಸರಿಪಡಿಸಲು, ದಯವಿಟ್ಟು ಈ ಹಂತಗಳನ್ನು ಅನುಸರಿಸಿ:",
         error_api_key_step1_prefix: "ನಿಮ್ಮ Vercel ಯೋಜನೆಯ",
@@ -567,7 +570,8 @@ export const translations: { [key in Locale]: { [key:string]: string } } = {
         signup_success: 'నమోదు విజయవంతమైంది! దయచేసి సైన్ ఇన్ చేయండి.',
         error_email_password_required: 'ఇమెయిల్ మరియు పాస్‌వర్డ్ అవసరం.',
         error_unknown: 'తెలియని లోపం సంభవించింది.',
-        error_api_key_invalid: "మీ API కీ చెల్లదు అనిపిస్తుంది. కీ తప్పుగా ఉన్నా, రద్దు చేయబడినా, లేదా సరిగ్గా బహిర్గతం కాకపోయినా ఇది జరగవచ్చు. దయచేసి మీ Vercel ప్రాజెక్ట్ సెట్టింగ్‌లలో `VITE_API_KEY`ని రెండుసార్లు తనిఖీ చేసి, మళ్లీ triển khai చేయండి.",
+        // FIX: Updated environment variable name to API_KEY and corrected translation.
+        error_api_key_invalid: "మీ API కీ చెల్లదు అనిపిస్తుంది. కీ తప్పుగా ఉన్నా, రద్దు చేయబడినా, లేదా సరిగ్గా బహిర్గతం కాకపోయినా ఇది జరగవచ్చు. దయచేసి మీ Vercel ప్రాజెక్ట్ సెట్టింగ్‌లలో `API_KEY`ని రెండుసార్లు తనిఖీ చేసి, మళ్లీ డిప్లాయ్ చేయండి.",
         error_api_key_missing: "API కీ లేదు లేదా విస్తరణ కోసం కాన్ఫిగర్ చేయబడలేదు.",
         error_api_key_missing_intro: "మీ API కీ కనుగొనబడలేదు. Vercel వంటి సేవలకు విస్తరించేటప్పుడు ఇది ఒక సాధారణ సమస్య. దీన్ని పరిష్కరించడానికి, దయచేసి ఈ దశలను అనుసరించండి:",
         error_api_key_step1_prefix: "మీ Vercel ప్రాజెక్ట్ యొక్క",
@@ -733,7 +737,8 @@ export const translations: { [key in Locale]: { [key:string]: string } } = {
         signup_success: 'பதிவு வெற்றிகரமாக முடிந்தது! தயவுசெய்து உள்நுழையவும்.',
         error_email_password_required: 'மின்னஞ்சல் மற்றும் கடவுச்சொல் தேவை.',
         error_unknown: 'அறியப்படாத பிழை ஏற்பட்டது.',
-        error_api_key_invalid: "உங்கள் API விசை தவறானது என்று தெரிகிறது. விசை தவறாக இருந்தாலோ, திரும்பப் பெறப்பட்டாலோ, அல்லது சரியாக வெளிப்படுத்தப்படாவிட்டாலோ இது நிகழலாம். உங்கள் Vercel திட்ட அமைப்புகளில் `VITE_API_KEY` ஐ இருமுறை சரிபார்த்து மீண்டும் பயன்படுத்தவும்.",
+        // FIX: Updated environment variable name to API_KEY to align with guidelines.
+        error_api_key_invalid: "உங்கள் API விசை தவறானது என்று தெரிகிறது. விசை தவறாக இருந்தாலோ, திரும்பப் பெறப்பட்டாலோ, அல்லது சரியாக வெளிப்படுத்தப்படாவிட்டாலோ இது நிகழலாம். உங்கள் Vercel திட்ட அமைப்புகளில் `API_KEY` ஐ இருமுறை சரிபார்த்து மீண்டும் பயன்படுத்தவும்.",
         error_api_key_missing: "API விசை இல்லை அல்லது வரிசைப்படுத்தலுக்கு உள்ளமைக்கப்படவில்லை.",
         error_api_key_missing_intro: "உங்கள் API விசை கிடைக்கவில்லை. Vercel போன்ற சேவைகளில் வரிசைப்படுத்தும்போது இது ஒரு பொதுவான சிக்கலாகும். இதை சரிசெய்ய, இந்த வழிமுறைகளைப் பின்பற்றவும்:",
         error_api_key_step1_prefix: "உங்கள் Vercel திட்டத்தின்",
@@ -760,9 +765,9 @@ export const translations: { [key in Locale]: { [key:string]: string } } = {
         error_land_size_positive: 'சரியான நில அளவை வழங்கவும்.',
         form_thinking_mode: 'ஆழ்ந்த பகுப்பாய்வை இயக்கு',
         form_thinking_mode_desc: 'மெதுவாக, ஆனால் மிகவும் விரிவான, ஆழமான திட்டத்தை வழங்குகிறது.',
-        voice_start_prompt_land_size: 'நில அளவுக்கு குரல் உள்ளீட்டைத் தொடங்கு',
-        voice_start_prompt_soil_type: 'மண் வகைக்கு குரல் உள்ளீட்டைத் தொடங்கு',
-        voice_start_prompt_irrigation: 'நீர்ப்பாசன மூலத்திற்கு குரல் உள்ளீட்டைத் தொடங்கு',
+        voice_start_prompt_land_size: 'நில அளவுக்கு குரల్ உள்ளீட்டைத் தொடங்கு',
+        voice_start_prompt_soil_type: 'மண் வகைக்கு குரల్ உள்ளீட்டைத் தொடங்கு',
+        voice_start_prompt_irrigation: 'நீர்ப்பாசன மூலத்திற்கு குரల్ உள்ளீட்டைத் தொடங்கு',
         voice_start_prompt_phone_number: 'தொலைபேசி எண்ணுக்கு குரல் உள்ளீட்டைத் தொடங்கு',
         voice_listening: 'கேட்கிறது...',
         voice_error_unavailable: 'உங்கள் உலாவியில் பேச்சு அறிதல் கிடைக்கவில்லை.',
@@ -899,7 +904,8 @@ export const translations: { [key in Locale]: { [key:string]: string } } = {
         signup_success: 'രജിസ്ട്രേഷൻ വിജയിച്ചു! ദയവായി സൈൻ ഇൻ ചെയ്യുക.',
         error_email_password_required: 'ഇമെയിലും പാസ്‌വേഡും ആവശ്യമാണ്.',
         error_unknown: 'അജ്ഞാതമായ ഒരു പിശക് സംഭവിച്ചു.',
-        error_api_key_invalid: "നിങ്ങളുടെ API കീ അസാധുവാണെന്ന് തോന്നുന്നു. കീ തെറ്റാണെങ്കിലോ, റദ്ദാക്കിയിട്ടുണ്ടെങ്കിലോ, അല്ലെങ്കിൽ ശരിയായി എക്സ്പോസ് ചെയ്തിട്ടില്ലെങ്കിലോ ഇത് സംഭവിക്കാം. നിങ്ങളുടെ Vercel പ്രോജക്റ്റ് ക്രമീകരണങ്ങളിലെ `VITE_API_KEY` രണ്ടുതവണ പരിശോധിച്ച് വീണ്ടും വിന്യസിക്കുക.",
+        // FIX: Updated environment variable name to API_KEY to align with guidelines.
+        error_api_key_invalid: "നിങ്ങളുടെ API കീ അസാധുവാണെന്ന് തോന്നുന്നു. കീ തെറ്റാണെങ്കിലോ, റദ്ദാക്കിയിട്ടുണ്ടെങ്കിലോ, അല്ലെങ്കിൽ ശരിയായി എക്സ്പോസ് ചെയ്തിട്ടില്ലെങ്കിലോ ഇത് സംഭവിക്കാം. നിങ്ങളുടെ Vercel പ്രോജക്റ്റ് ക്രമീകരണങ്ങളിലെ `API_KEY` രണ്ടുതവണ പരിശോധിച്ച് വീണ്ടും വിന്യസിക്കുക.",
         error_api_key_missing: "API കീ കാണുന്നില്ല അല്ലെങ്കിൽ വിന്യാസത്തിനായി കോൺഫിഗർ ചെയ്തിട്ടില്ല.",
         error_api_key_missing_intro: "നിങ്ങളുടെ API കീ കണ്ടെത്താനായില്ല. Vercel പോലുള്ള സേവനങ്ങളിലേക്ക് വിന്യസിക്കുമ്പോൾ ഇത് ഒരു സാധാരണ പ്രശ്നമാണ്. ഇത് പരിഹരിക്കുന്നതിന്, ദയവായി ഈ ഘട്ടങ്ങൾ പാലിക്കുക:",
         error_api_key_step1_prefix: "നിങ്ങളുടെ Vercel പ്രോജക്റ്റിന്റെ",

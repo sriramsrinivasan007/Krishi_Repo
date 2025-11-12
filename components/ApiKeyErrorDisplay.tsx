@@ -24,8 +24,9 @@ const ApiKeyErrorDisplay: React.FC<ApiKeyErrorDisplayProps> = ({ smallText = fal
         </li>
         <li>
           {t('error_api_key_step2')}{' '}
+          {/* FIX: Updated environment variable name to API_KEY to align with guidelines. */}
           <code className="px-2 py-1 font-mono text-sm bg-red-200 dark:bg-red-800/50 text-red-900 dark:text-red-200 rounded">
-            VITE_API_KEY
+            API_KEY
           </code>.
         </li>
         <li>{t('error_api_key_step3')}</li>

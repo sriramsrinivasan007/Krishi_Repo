@@ -7,10 +7,8 @@ import { GoogleGenAI } from '@google/genai';
  * @returns An instance of the GoogleGenAI client.
  */
 export function getAiClient(): GoogleGenAI {
-  // For frontend frameworks like Vite, environment variables exposed to the browser
-  // must be prefixed (e.g., VITE_) and are accessed via `import.meta.env`.
-  // Vercel correctly injects the dashboard variables into this object during the build.
-  // FIX: Adhering to the coding guidelines to exclusively use process.env.API_KEY. This resolves the TypeScript error on line 13.
+  // FIX: Adhering to the project guidelines to use `process.env.API_KEY`.
+  // The API key is expected to be available in the execution environment.
   const apiKey = process.env.API_KEY;
 
   if (!apiKey || apiKey.trim() === '') {

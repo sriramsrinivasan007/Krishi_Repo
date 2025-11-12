@@ -67,6 +67,7 @@ const App: React.FC = () => {
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      // FIX: Updated environment variable name from VITE_API_KEY to API_KEY to align with guidelines.
       if (errorMessage.includes("API_KEY environment variable is not configured")) {
           setError(t('error_api_key_missing'));
       } else if (errorMessage.includes("API Key") || errorMessage.includes("Requested entity was not found.")) {

@@ -194,7 +194,7 @@ const Conversation: React.FC<ConversationProps> = () => {
             console.error("Failed to start conversation:", err);
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
 
-            if (errorMessage.includes("API_KEY environment variable is not configured")) {
+            if (errorMessage.includes("VITE_API_KEY environment variable is not configured")) {
                 setError(t('error_api_key_missing'));
             } else if (errorMessage.includes("API Key") || errorMessage.includes("Requested entity was not found")) {
                 setError(t('error_api_key_invalid'));
