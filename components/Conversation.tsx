@@ -5,6 +5,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { FarmerIcon, MicrophoneIcon, StopCircleIcon } from './IconComponents';
 import { createBlob, decode, decodeAudioData } from '../utils/audioUtils';
 import { languages, voiceMap } from '../locales/translations';
+import { getAiClient } from '../utils/geminiClient';
 
 type TranscriptEntry = {
     speaker: 'user' | 'model';
@@ -92,7 +93,7 @@ const Conversation: React.FC<ConversationProps> = () => {
         setCurrentOutput('');
 
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = getAiClient();
             streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
 
             const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -192,8 +193,10 @@ const Conversation: React.FC<ConversationProps> = () => {
             console.error("Failed to start conversation:", err);
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
 
-            if (errorMessage.includes("API Key") || errorMessage.includes("Requested entity was not found")) {
-                setError(t('conversation_error_api'));
+            if (errorMessage.includes("API_KEY environment variable is not configured")) {
+                setError(t('error_api_key_missing'));
+            } else if (errorMessage.includes("API Key") || errorMessage.includes("Requested entity was not found")) {
+                setError(t('error_api_key_invalid'));
             } else if (err instanceof DOMException && err.name === "NotAllowedError") {
                  setError(t('conversation_error_mic'));
             } else {

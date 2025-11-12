@@ -3,6 +3,7 @@ import type { UserInput, CropAdvisory, Locale, Coordinates, GroundingChunk, Advi
 import { cropAdvisorySchema, weatherForecastSchema } from './schema';
 import { convertSchemaForGemini } from '../utils/schemaConverter';
 import { languages, voiceMap } from '../locales/translations';
+import { getAiClient } from '../utils/geminiClient';
 
 async function getGroundedContextAndSources(
   ai: GoogleGenAI,
@@ -58,7 +59,7 @@ async function getGroundedContextAndSources(
 }
 
 export async function generateCropAdvisory(userInput: UserInput, locale: Locale, enableThinking: boolean, coordinates: Coordinates | null): Promise<AdvisoryResult> {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAiClient();
   const { landSize, location, soilType, irrigation, phoneNumber } = userInput;
   const languageName = languages.find(lang => lang.code === locale)?.name || 'English';
 
@@ -154,7 +155,7 @@ export async function generateCropAdvisory(userInput: UserInput, locale: Locale,
 
 
 export async function generateSpeech(text: string, locale: Locale): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = getAiClient();
     try {
         const voiceName = voiceMap[locale] || 'Kore';
         const response = await ai.models.generateContent({
@@ -182,7 +183,7 @@ export async function generateSpeech(text: string, locale: Locale): Promise<stri
 }
 
 export async function getWeatherForecast(location: string, locale: Locale): Promise<WeatherForecast> {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = getAiClient();
     const languageName = languages.find(lang => lang.code === locale)?.name || 'English';
     const prompt = `
         Act as a weather API. Provide the current weather and a realistic, 5-day forecast for the location: "${location}".
