@@ -7,9 +7,9 @@ interface InfoCardProps {
 }
 
 export const InfoCard: React.FC<InfoCardProps> = ({ title, value, isHighlight = false }) => (
-  <div className={`p-4 rounded-lg ${isHighlight ? 'bg-brand-primary text-white' : 'bg-brand-background dark:bg-gray-800 border dark:border-gray-600'}`}>
-    <p className={`text-sm font-semibold ${isHighlight ? 'text-green-100' : 'text-brand-text-secondary dark:text-gray-400'}`}>{title}</p>
-    <p className={`text-xl font-bold ${isHighlight ? 'text-white' : 'text-brand-text-primary dark:text-white'}`}>{value}</p>
+  <div className={`p-4 rounded-xl ${isHighlight ? 'bg-primary text-primary-foreground' : 'bg-muted/50 border'}`}>
+    <p className={`text-sm font-semibold ${isHighlight ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>{title}</p>
+    <p className={`text-xl font-bold ${isHighlight ? 'text-primary-foreground' : 'text-foreground'}`}>{value}</p>
   </div>
 );
 
@@ -17,13 +17,17 @@ interface SectionCardProps {
   title: string;
   icon: React.ReactNode;
   children: React.ReactNode;
+  delay?: string;
 }
 
-export const SectionCard: React.FC<SectionCardProps> = ({ title, icon, children }) => (
-  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+export const SectionCard: React.FC<SectionCardProps> = ({ title, icon, children, delay }) => (
+  <div 
+    className="bg-card text-card-foreground p-6 rounded-2xl shadow-lg border animate-fade-in-up"
+    style={{ animationDelay: delay }}
+  >
     <div className="flex items-center mb-4">
-      <div className="w-8 h-8 text-brand-primary dark:text-green-400">{icon}</div>
-      <h2 className="text-2xl font-bold text-brand-text-primary dark:text-gray-100 ml-3">{title}</h2>
+      <div className="w-8 h-8 text-primary">{icon}</div>
+      <h2 className="text-2xl font-bold text-foreground ml-3">{title}</h2>
     </div>
     {children}
   </div>
@@ -34,10 +38,11 @@ interface ListCardProps {
     items: string[];
     icon: React.ReactNode;
     itemClassName?: string;
+    delay?: string;
 }
 
-export const ListCard: React.FC<ListCardProps> = ({ title, items, icon, itemClassName = 'bg-gray-100 dark:bg-gray-700' }) => (
-    <SectionCard title={title} icon={icon}>
+export const ListCard: React.FC<ListCardProps> = ({ title, items, icon, itemClassName = 'bg-muted/50 text-muted-foreground', delay }) => (
+    <SectionCard title={title} icon={icon} delay={delay}>
         <ul className="space-y-2">
             {items.map((item, index) => (
                 <li key={index} className={`p-3 rounded-md text-sm font-medium ${itemClassName}`}>

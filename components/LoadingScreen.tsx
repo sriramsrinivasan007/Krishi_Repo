@@ -26,10 +26,10 @@ const LoadingScreen: React.FC = () => {
     return (
         <div className="flex flex-col items-center justify-center text-center h-96">
             <LoadingSpinner />
-            <p className="text-xl text-brand-primary-light mt-6 font-semibold transition-opacity duration-500 ease-in-out h-8">
+            <p className="text-xl text-primary mt-6 font-semibold transition-opacity duration-500 ease-in-out h-8">
                 {messages[messageIndex]}
             </p>
-            <p className="text-md text-brand-text-secondary dark:text-gray-400 mt-2">{t('loading_subtitle')}</p>
+            <p className="text-md text-muted-foreground mt-2">{t('loading_subtitle')}</p>
         </div>
     );
 };

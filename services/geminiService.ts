@@ -21,7 +21,7 @@ async function getGroundedContextAndSources(
     `;
     
     const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "ag:281a6009:20251007:krishi-gpt:d489e16b",
         contents: prompt,
         config: {
             tools: [{googleSearch: {}}, {googleMaps: {}}],
@@ -113,7 +113,7 @@ export async function generateCropAdvisory(userInput: UserInput, locale: Locale,
     `;
 
     const geminiSchema = convertSchemaForGemini(cropAdvisorySchema.schema);
-    const modelName = enableThinking ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+    const modelName = 'ag:281a6009:20251007:krishi-gpt:d489e16b';
     
     const config: any = {
         responseMimeType: "application/json",
@@ -205,7 +205,7 @@ export async function getWeatherForecast(location: string, locale: Locale): Prom
     try {
         const geminiSchema = convertSchemaForGemini(weatherForecastSchema.schema);
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'ag:281a6009:20251007:krishi-gpt:d489e16b',
             contents: prompt,
             config: {
                 responseMimeType: "application/json",

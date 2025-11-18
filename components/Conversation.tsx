@@ -218,16 +218,16 @@ const Conversation: React.FC<ConversationProps> = () => {
     };
 
     return (
-        <div className="max-w-3xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+        <div className="max-w-3xl mx-auto bg-card text-card-foreground p-8 rounded-3xl shadow-xl border">
             <div className="text-center mb-6">
-                <h2 className="text-3xl font-bold text-brand-text-primary dark:text-gray-100">{t('conversation_title')}</h2>
-                <p className="text-brand-text-secondary dark:text-gray-400 mt-2">{t('conversation_subtitle')}</p>
+                <h2 className="text-3xl font-bold text-foreground">{t('conversation_title')}</h2>
+                <p className="text-muted-foreground mt-2">{t('conversation_subtitle')}</p>
             </div>
 
-            <div className="h-96 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border dark:border-gray-700 mb-6 space-y-4">
+            <div className="h-96 overflow-y-auto p-4 bg-muted/50 rounded-lg border mb-6 space-y-4">
                 {transcriptHistory.map((entry, index) => (
                     <div key={index} className={`flex ${entry.speaker === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`p-3 rounded-xl max-w-lg ${entry.speaker === 'user' ? 'bg-green-100 text-green-900 dark:bg-green-800 dark:text-green-100' : 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200'}`}>
+                        <div className={`p-3 rounded-xl max-w-lg ${entry.speaker === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'}`}>
                             <p className="font-bold text-sm mb-1">{entry.speaker === 'user' ? t('conversation_you') : t('conversation_ai')}</p>
                             <p>{entry.text}</p>
                         </div>
@@ -235,14 +235,14 @@ const Conversation: React.FC<ConversationProps> = () => {
                 ))}
                  {currentInput && (
                     <div className="flex justify-end">
-                        <div className="p-3 rounded-xl max-w-lg bg-green-50 text-green-700 dark:bg-green-900/70 dark:text-green-300 italic">
+                        <div className="p-3 rounded-xl max-w-lg bg-primary/20 text-primary-foreground/80 italic">
                              <p>{currentInput}</p>
                         </div>
                     </div>
                  )}
                   {currentOutput && (
                     <div className="flex justify-start">
-                         <div className="p-3 rounded-xl max-w-lg bg-gray-100 text-gray-600 dark:bg-gray-700/70 dark:text-gray-400 italic">
+                         <div className="p-3 rounded-xl max-w-lg bg-secondary/80 text-secondary-foreground/80 italic">
                              <p>{currentOutput}</p>
                         </div>
                     </div>
@@ -250,11 +250,11 @@ const Conversation: React.FC<ConversationProps> = () => {
             </div>
 
             <div className="flex flex-col items-center justify-center space-y-4">
-                 <p className="h-6 text-brand-primary dark:text-green-400 font-semibold">{renderStatus()}</p>
+                 <p className="h-6 text-primary font-semibold">{renderStatus()}</p>
                 {status === 'idle' || status === 'error' ? (
                     <button
                         onClick={startConversation}
-                        className="w-48 h-16 bg-brand-primary-light text-white font-bold rounded-full flex items-center justify-center space-x-2 text-lg hover:bg-brand-primary transition-transform transform hover:scale-105"
+                        className="w-48 h-16 bg-primary text-primary-foreground font-bold rounded-full flex items-center justify-center space-x-2 text-lg hover:bg-primary/90 transition-transform transform hover:scale-105"
                     >
                         <MicrophoneIcon className="w-6 h-6" />
                         <span>{t('conversation_start')}</span>
@@ -262,7 +262,7 @@ const Conversation: React.FC<ConversationProps> = () => {
                 ) : (
                     <button
                         onClick={stopConversation}
-                        className="w-48 h-16 bg-red-600 text-white font-bold rounded-full flex items-center justify-center space-x-2 text-lg hover:bg-red-700 transition-transform transform hover:scale-105"
+                        className="w-48 h-16 bg-destructive text-destructive-foreground font-bold rounded-full flex items-center justify-center space-x-2 text-lg hover:bg-destructive/90 transition-transform transform hover:scale-105"
                     >
                         <StopCircleIcon className="w-6 h-6" />
                         <span>{t('conversation_stop')}</span>
@@ -270,10 +270,10 @@ const Conversation: React.FC<ConversationProps> = () => {
                 )}
                 {error && (
                     error === t('error_api_key_missing')
-                    ? <div className="text-left text-sm mt-4 p-4 bg-red-100 dark:bg-red-900/30 rounded-lg border border-red-200 dark:border-red-600">
+                    ? <div className="text-left text-sm mt-4 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
                         <ApiKeyErrorDisplay smallText={true} />
                       </div>
-                    : <p className="text-sm text-red-600 dark:text-red-400 text-center mt-2">{error}</p>
+                    : <p className="text-sm text-destructive text-center mt-2">{error}</p>
                 )}
             </div>
         </div>

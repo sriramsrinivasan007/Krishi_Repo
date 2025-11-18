@@ -156,16 +156,18 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
     setIsMapOpen(false);
   };
 
+  const inputStyles = "w-full px-4 py-2.5 pr-10 bg-transparent dark:text-gray-200 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring transition duration-300";
+
   return (
     <>
-      <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+      <div className="max-w-2xl mx-auto bg-card text-card-foreground p-8 rounded-3xl shadow-lg border">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-brand-text-primary dark:text-gray-100">{t('form_title')}</h2>
-          <p className="text-brand-text-secondary dark:text-gray-400 mt-2">{t('form_subtitle')}</p>
+          <h2 className="text-3xl font-bold">{t('form_title')}</h2>
+          <p className="text-muted-foreground mt-2">{t('form_subtitle')}</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="landSize" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
+            <label htmlFor="landSize" className="block text-sm font-medium text-muted-foreground mb-1">
               {t('form_land_size')}
             </label>
             <div className="relative">
@@ -175,28 +177,28 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
                 id="landSize"
                 value={formData.landSize}
                 onChange={handleChange}
-                className="w-full px-4 py-2 pr-10 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary-light dark:focus:ring-green-500 focus:border-transparent transition duration-300"
+                className={inputStyles}
                 placeholder={t('form_land_size_placeholder')}
                 required
               />
               <button
                   type="button"
                   onClick={() => handleToggleVoiceInput('landSize')}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-brand-primary transition-colors"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
                   aria-label={t('voice_start_prompt_land_size')}
               >
                   <MicrophoneIcon className={`w-5 h-5 ${recordingField === 'landSize' ? 'text-red-500 animate-pulse' : ''}`} />
               </button>
             </div>
              {recordingField === 'landSize' && (
-              <p className="text-sm text-brand-primary dark:text-green-400 mt-1">
+              <p className="text-sm text-primary mt-1">
                 {interimTranscript || t('voice_listening')}
               </p>
             )}
           </div>
 
           <div>
-            <label htmlFor="location" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
+            <label htmlFor="location" className="block text-sm font-medium text-muted-foreground mb-1">
               {t('form_location')}
             </label>
             <div className="flex items-center space-x-2">
@@ -206,13 +208,13 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
                   id="location"
                   value={formData.location}
                   readOnly
-                  className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-900/50 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg cursor-default"
+                  className="w-full px-4 py-2.5 bg-muted/50 border border-input rounded-lg cursor-default"
                   placeholder={t('form_location_placeholder')}
               />
               <button
                   type="button"
                   onClick={() => setIsMapOpen(true)}
-                  className="px-4 py-2 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-primary-light transition duration-300 whitespace-nowrap flex items-center space-x-2"
+                  className="px-4 py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition duration-300 whitespace-nowrap flex items-center space-x-2"
               >
                   <MapPinIcon className="w-5 h-5" />
                   <span>{t('form_select_on_map')}</span>
@@ -221,7 +223,7 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
           </div>
 
           <div>
-            <label htmlFor="soilType" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
+            <label htmlFor="soilType" className="block text-sm font-medium text-muted-foreground mb-1">
               {t('form_soil_type')}
             </label>
             <div className="relative">
@@ -231,28 +233,28 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
                 id="soilType"
                 value={formData.soilType}
                 onChange={handleChange}
-                className="w-full px-4 py-2 pr-10 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary-light dark:focus:ring-green-500 focus:border-transparent transition duration-300"
+                className={inputStyles}
                 placeholder={t('form_soil_type_placeholder')}
                 required
               />
                <button
                   type="button"
                   onClick={() => handleToggleVoiceInput('soilType')}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-brand-primary transition-colors"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
                   aria-label={t('voice_start_prompt_soil_type')}
               >
                   <MicrophoneIcon className={`w-5 h-5 ${recordingField === 'soilType' ? 'text-red-500 animate-pulse' : ''}`} />
               </button>
             </div>
             {recordingField === 'soilType' && (
-              <p className="text-sm text-brand-primary dark:text-green-400 mt-1">
+              <p className="text-sm text-primary mt-1">
                 {interimTranscript || t('voice_listening')}
               </p>
             )}
           </div>
 
           <div>
-            <label htmlFor="irrigation" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
+            <label htmlFor="irrigation" className="block text-sm font-medium text-muted-foreground mb-1">
               {t('form_irrigation')}
             </label>
             <div className="relative">
@@ -262,28 +264,28 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
                 id="irrigation"
                 value={formData.irrigation}
                 onChange={handleChange}
-                className="w-full px-4 py-2 pr-10 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary-light dark:focus:ring-green-500 focus:border-transparent transition duration-300"
+                className={inputStyles}
                 placeholder={t('form_irrigation_placeholder')}
                 required
               />
               <button
                   type="button"
                   onClick={() => handleToggleVoiceInput('irrigation')}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-brand-primary transition-colors"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
                   aria-label={t('voice_start_prompt_irrigation')}
               >
                   <MicrophoneIcon className={`w-5 h-5 ${recordingField === 'irrigation' ? 'text-red-500 animate-pulse' : ''}`} />
               </button>
             </div>
             {recordingField === 'irrigation' && (
-              <p className="text-sm text-brand-primary dark:text-green-400 mt-1">
+              <p className="text-sm text-primary mt-1">
                 {interimTranscript || t('voice_listening')}
               </p>
             )}
           </div>
 
           <div>
-            <label htmlFor="phoneNumber" className="block text-sm font-medium text-brand-text-secondary dark:text-gray-400 mb-1">
+            <label htmlFor="phoneNumber" className="block text-sm font-medium text-muted-foreground mb-1">
               {t('form_phone_number')}
             </label>
             <div className="relative">
@@ -293,30 +295,30 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
                 id="phoneNumber"
                 value={formData.phoneNumber}
                 onChange={handleChange}
-                className="w-full px-4 py-2 pr-10 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-primary-light dark:focus:ring-green-500 focus:border-transparent transition duration-300"
+                className={inputStyles}
                 placeholder={t('form_phone_number_placeholder')}
                 required
               />
               <button
                   type="button"
                   onClick={() => handleToggleVoiceInput('phoneNumber')}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-brand-primary transition-colors"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
                   aria-label={t('voice_start_prompt_phone_number')}
               >
                   <MicrophoneIcon className={`w-5 h-5 ${recordingField === 'phoneNumber' ? 'text-red-500 animate-pulse' : ''}`} />
               </button>
             </div>
              {recordingField === 'phoneNumber' && (
-              <p className="text-sm text-brand-primary dark:text-green-400 mt-1">
+              <p className="text-sm text-primary mt-1">
                 {interimTranscript || t('voice_listening')}
               </p>
             )}
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('form_phone_number_desc')}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('form_phone_number_desc')}</p>
           </div>
           
-          {voiceError && <p className="text-sm text-red-600 dark:text-red-400">{voiceError}</p>}
+          {voiceError && <p className="text-sm text-destructive">{voiceError}</p>}
 
-          <label htmlFor="enableThinking" className="flex items-center space-x-3 bg-green-50 dark:bg-green-900/50 p-3 rounded-lg cursor-pointer">
+          <label htmlFor="enableThinking" className="flex items-center space-x-3 bg-muted/50 p-3 rounded-lg cursor-pointer">
               <div className="relative flex items-center justify-center w-5 h-5">
                   <input
                       type="checkbox"
@@ -324,10 +326,10 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
                       name="enableThinking"
                       checked={enableThinking}
                       onChange={handleCheckboxChange}
-                      className="appearance-none h-5 w-5 rounded border-2 border-gray-400 dark:border-gray-500 checked:bg-brand-primary checked:border-brand-primary focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 focus:ring-brand-primary-light transition-colors"
+                      className="appearance-none h-5 w-5 rounded border-2 border-muted-foreground/50 checked:bg-primary checked:border-primary focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 focus:ring-ring transition-colors"
                   />
                   <svg 
-                      className={`absolute w-3.5 h-3.5 text-white pointer-events-none transition-opacity ${enableThinking ? 'opacity-100' : 'opacity-0'}`} 
+                      className={`absolute w-3.5 h-3.5 text-primary-foreground pointer-events-none transition-opacity ${enableThinking ? 'opacity-100' : 'opacity-0'}`} 
                       fill="none" 
                       viewBox="0 0 24 24" 
                       stroke="currentColor"
@@ -337,19 +339,19 @@ const InputForm: React.FC<InputFormProps> = ({ onGenerate }) => {
                   </svg>
               </div>
               <div>
-                  <span className="font-medium text-brand-text-primary dark:text-gray-200">
+                  <span className="font-medium text-foreground">
                       {t('form_thinking_mode')}
                   </span>
-                  <p className="text-xs text-brand-text-secondary dark:text-gray-400">{t('form_thinking_mode_desc')}</p>
+                  <p className="text-xs text-muted-foreground">{t('form_thinking_mode_desc')}</p>
               </div>
           </label>
           
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           <div className="pt-4">
             <button
               type="submit"
-              className="w-full bg-brand-primary-light text-white font-bold py-3 px-4 rounded-lg hover:bg-brand-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition duration-300 ease-in-out transform hover:scale-105"
+              className="w-full bg-primary text-primary-foreground font-bold py-3 px-4 rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition duration-300 ease-in-out transform hover:scale-105"
             >
               {t('form_submit_button')}
             </button>

@@ -14,22 +14,124 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    </style>
     <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
             colors: {
-              'brand-primary': '#166534', // green-800
-              'brand-primary-light': '#22c55e', // green-500
-              'brand-background': '#f0fdf4', // green-50
-              'brand-text-primary': '#1f2937', // gray-800
-              'brand-text-secondary': '#4b5563', // gray-600
+              background: 'hsl(var(--background))',
+              foreground: 'hsl(var(--foreground))',
+              card: 'hsl(var(--card))',
+              'card-foreground': 'hsl(var(--card-foreground))',
+              popover: 'hsl(var(--popover))',
+              'popover-foreground': 'hsl(var(--popover-foreground))',
+              primary: 'hsl(var(--primary))',
+              'primary-foreground': 'hsl(var(--primary-foreground))',
+              secondary: 'hsl(var(--secondary))',
+              'secondary-foreground': 'hsl(var(--secondary-foreground))',
+              muted: 'hsl(var(--muted))',
+              'muted-foreground': 'hsl(var(--muted-foreground))',
+              accent: 'hsl(var(--accent))',
+              'accent-foreground': 'hsl(var(--accent-foreground))',
+              destructive: 'hsl(var(--destructive))',
+              'destructive-foreground': 'hsl(var(--destructive-foreground))',
+              border: 'hsl(var(--border))',
+              input: 'hsl(var(--input))',
+              ring: 'hsl(var(--ring))',
+            },
+            borderRadius: {
+              '2xl': '1rem',
+              '3xl': '1.5rem',
+            },
+            keyframes: {
+              'fade-in-up': {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+            },
+            animation: {
+              'fade-in-up': 'fade-in-up 0.5s ease-out forwards',
             },
           }
         }
       }
     </script>
+     <style type="text/tailwindcss">
+      @layer base {
+        :root {
+          --background: 0 0% 100%;
+          --foreground: 222.2 84% 4.9%;
+
+          --card: 0 0% 100%;
+          --card-foreground: 222.2 84% 4.9%;
+ 
+          --popover: 0 0% 100%;
+          --popover-foreground: 222.2 84% 4.9%;
+ 
+          --primary: 142.1 76.2% 36.3%;
+          --primary-foreground: 355.7 100% 97.3%;
+ 
+          --secondary: 210 40% 96.1%;
+          --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+          --muted: 210 40% 96.1%;
+          --muted-foreground: 215.4 16.3% 46.9%;
+ 
+          --accent: 210 40% 96.1%;
+          --accent-foreground: 222.2 47.4% 11.2%;
+ 
+          --destructive: 0 84.2% 60.2%;
+          --destructive-foreground: 210 40% 98%;
+
+          --border: 214.3 31.8% 91.4%;
+          --input: 214.3 31.8% 91.4%;
+          --ring: 142.1 76.2% 36.3%;
+ 
+          --radius: 0.5rem;
+        }
+ 
+        .dark {
+          --background: 222.2 84% 4.9%;
+          --foreground: 210 40% 98%;
+ 
+          --card: 222.2 84% 4.9%;
+          --card-foreground: 210 40% 98%;
+ 
+          --popover: 222.2 84% 4.9%;
+          --popover-foreground: 210 40% 98%;
+ 
+          --primary: 142.1 70.6% 45.3%;
+          --primary-foreground: 355.7 100% 97.3%;
+ 
+          --secondary: 217.2 32.6% 17.5%;
+          --secondary-foreground: 210 40% 98%;
+ 
+          --muted: 217.2 32.6% 17.5%;
+          --muted-foreground: 215 20.2% 65.1%;
+ 
+          --accent: 217.2 32.6% 17.5%;
+          --accent-foreground: 210 40% 98%;
+ 
+          --destructive: 0 62.8% 30.6%;
+          --destructive-foreground: 210 40% 98%;
+ 
+          --border: 217.2 32.6% 17.5%;
+          --input: 217.2 32.6% 17.5%;
+          --ring: 142.1 70.6% 45.3%;
+        }
+
+        body {
+          @apply bg-background text-foreground font-sans;
+        }
+      }
+    </style>
   <script type="importmap">
 {
   "imports": {
@@ -43,7 +145,7 @@
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-brand-background dark:bg-gray-900">
+  <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

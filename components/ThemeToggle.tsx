@@ -12,7 +12,7 @@ const ThemeToggle: React.FC = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-full text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white transition-colors duration-300"
+      className="p-2 rounded-full text-foreground bg-secondary hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring transition-colors duration-300"
       aria-label="Toggle dark mode"
     >
       {theme === 'light' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}

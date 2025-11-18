@@ -1,8 +1,9 @@
 import React from 'react';
 
 export const FarmerIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M18.5,8.5L16,12L17,14H19V20H21V14H23V12L20,8H18.5M4,18C4,18.89 4.39,19.68 5,20.25V22H7V20.25C7.61,19.68 8,18.89 8,18C8,16.89 7.1,16 6,16C4.9,16 4,16.89 4,18M16,18C16,18.89 16.39,19.68 17,20.25V22H19V20.25C19.61,19.68 20,18.89 20,18C20,16.89 19.1,16 18,16C16.9,16 16,16.89 16,18M14,15.5H4V14H14.5C14.19,13.24 13.16,12.26 12,12C10.71,11.72 9.38,12.19 8.5,13.1L7.09,11.69C8.5,10.19 10.53,9.64 12.33,10.04C14.73,10.56 16.5,12.82 16.5,15.5V17H14V15.5Z" />
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.657 7.343A8 8 0 0117.657 18.657z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 16.121A3 3 0 1014.12 11.88m-4.242 4.242L6.344 18.657m0 0a2 2 0 102.828-2.828m-2.828 2.828L4 20" />
     </svg>
 );
 
